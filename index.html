@@ -30,7 +30,6 @@
         @keyframes toastIn { 0% { opacity: 0; transform: translateY(-30px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
         @keyframes toastOut { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(0.9); } }
         
-        /* 🔥 FIX KANVAS BARCODE MOBILE 🔥 */
         #outGenBarCanvas { max-width: 100%; height: auto; object-fit: contain; }
     </style>
 </head>
@@ -50,15 +49,15 @@
             <button onclick="toggleSidebar()" class="text-white hover:text-red-300 font-bold text-xl">×</button>
         </div>
         <div class="p-4 space-y-3 flex-1">
-            <button onclick="switchMode('home')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">Halaman Utama</button>
-            <button onclick="switchMode('dashboard')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">Checkout Menu</button>
-            <button onclick="switchMode('search')" class="w-full text-left px-4 py-3 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-bold hover:bg-purple-200 transition text-sm shadow-sm border border-transparent hover:border-purple-300">Cari Barang</button>
-            <button onclick="switchMode('toko')" class="w-full text-left px-4 py-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-bold hover:bg-emerald-200 transition text-sm shadow-sm border border-transparent hover:border-emerald-300">Cari Toko</button>
-            <button onclick="switchMode('generator')" class="w-full text-left px-4 py-3 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 rounded-lg font-bold hover:bg-pink-200 transition text-sm shadow-sm border border-transparent hover:border-pink-300">Buat QR/Barcode</button>
-            <button id="btnMenuAdmin" onclick="switchMode('admin')" class="w-full text-left px-4 py-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-bold hover:bg-amber-200 transition text-sm hidden shadow-sm mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">Admin Panel</button>
+            <button onclick="switchMode('home')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">👋 Halaman Utama</button>
+            <button onclick="switchMode('dashboard')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">📦 Checkout Menu</button>
+            <button onclick="switchMode('search')" class="w-full text-left px-4 py-3 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-bold hover:bg-purple-200 transition text-sm shadow-sm border border-transparent hover:border-purple-300">🔍 Cari Barang</button>
+            <button onclick="switchMode('toko')" class="w-full text-left px-4 py-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-bold hover:bg-emerald-200 transition text-sm shadow-sm border border-transparent hover:border-emerald-300">🏪 Cari Toko</button>
+            <button onclick="switchMode('generator')" class="w-full text-left px-4 py-3 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 rounded-lg font-bold hover:bg-pink-200 transition text-sm shadow-sm border border-transparent hover:border-pink-300">🏁 Buat QR/Barcode</button>
+            <button id="btnMenuAdmin" onclick="switchMode('admin')" class="w-full text-left px-4 py-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-bold hover:bg-amber-200 transition text-sm hidden shadow-sm mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">👑 Admin Panel</button>
         </div>
         <div class="p-4 border-t border-slate-200 dark:border-slate-700">
-            <button onclick="logoutUser()" class="w-full bg-slate-800 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition">Logout Sistem</button>
+            <button onclick="logoutUser()" class="w-full bg-slate-800 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition">🚪 Logout Sistem</button>
         </div>
     </div>
 
@@ -188,8 +187,24 @@
             </div>
             
             <div id="viewLog" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl p-4 border border-slate-200 dark:border-slate-700">
-                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-sm">Riwayat Sukses</h3><button onclick="bersihkanLogSaya()" class="bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold px-3 py-1.5 rounded-md transition border border-red-200">Bersihkan</button></div>
-                <table class="w-full text-sm text-left"><thead class="text-[10px] uppercase font-black text-slate-400 border-b border-slate-200 dark:border-slate-700"><tr><th class="py-2">No</th><th>Nomor WA</th><th>Toko</th><th class="text-right">Aksi</th></tr></thead><tbody id="logTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-sm">Riwayat Sukses</h3>
+                    <div class="flex space-x-2">
+                        <button onclick="copyLogTerpilih()" class="bg-blue-100 text-blue-600 hover:bg-blue-200 text-[10px] font-bold px-3 py-1.5 rounded-md transition border border-blue-200">📋 Copy</button>
+                        <button onclick="bersihkanLogSaya()" class="bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold px-3 py-1.5 rounded-md transition border border-red-200">Bersihkan</button>
+                    </div>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="text-[10px] uppercase font-black text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                        <tr>
+                            <th class="py-2"><input type="checkbox" id="cbAllLogs" onclick="toggleAllLogs(this)" class="w-4 h-4 rounded text-blue-600 cursor-pointer"></th>
+                            <th>Nomor WA</th>
+                            <th>Toko</th>
+                            <th class="text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody>
+                </table>
             </div>
         </div>
 
@@ -444,6 +459,8 @@
         let currentUser = null; let currentRole = null; let currentActiveBatch = []; let isRegisterMode = false;
         let globalMenus = { dashboard: true, search: true, toko: true, generator: true };
 
+        async function muatDataKatalog() { }
+
         function getDbKey(type) { return `${currentUser}_bawx_${type}`; }
         function getNumbers() { return JSON.parse(localStorage.getItem(getDbKey('numbers'))) || []; }
         function getMyLogs() { return JSON.parse(localStorage.getItem(getDbKey('logs'))) || []; }
@@ -464,7 +481,7 @@
                     const data = await res.json();
                     if(data.menus) globalMenus = data.menus;
                 } catch(e){}
-                showWorkspace();
+                showWorkspace(); muatDataKatalog(); 
             }
         });
 
@@ -484,7 +501,7 @@
             if(mode === 'home') activeEl = document.getElementById('areaHome');
             else if(mode === 'dashboard') activeEl = document.getElementById('areaDashboard');
             else if(mode === 'admin') { activeEl = document.getElementById('areaAdmin'); loadAdminData(); }
-            else if(mode === 'search') activeEl = document.getElementById('areaSearch');
+            else if(mode === 'search') { activeEl = document.getElementById('areaSearch'); muatDataKatalog(); }
             else if(mode === 'toko') activeEl = document.getElementById('areaToko');
             else if(mode === 'generator') activeEl = document.getElementById('areaGenerator');
 
@@ -508,7 +525,7 @@
                     currentUser = data.username; currentRole = data.role || 'user'; 
                     if(data.settings && data.settings.menus) globalMenus = data.settings.menus; 
                     localStorage.setItem('bawx_session', currentUser); localStorage.setItem('bawx_role', currentRole); 
-                    setTimeout(()=>{showWorkspace();}, 500); 
+                    setTimeout(()=>{showWorkspace(); muatDataKatalog();}, 500); 
                 } else if(data.success && isRegisterMode) { 
                     showToast("Pendaftaran berhasil! Silakan login.", "success"); setTimeout(toggleAuthMode, 1000); 
                 } else { showToast(data.message || "Gagal masuk sistem.", "error"); }
@@ -544,15 +561,68 @@
                 if (data.success) { let logs = getMyLogs(); data.data.forEach((item, i) => { if(currentActiveBatch[i]) { currentActiveBatch[i].status = 'SUCCESS'; currentActiveBatch[i].result = item; logs.push({ nomor: currentActiveBatch[i].nomor, kodeToko: kode, timestamp: Date.now(), result: item }); } }); saveMyLogs(logs); renderNumbers(); renderLogs(); document.getElementById('soundSuccess').play().catch(()=>{}); showToast(`Tugas berhasil dieksekusi!`, 'success');
                 } else { showToast("Ditolak: " + data.message, 'error'); }
             } catch (err) { currentActiveBatch.forEach(i => i.status = 'ERROR'); showToast('Gagal menghubungi bot WhatsApp!', 'error'); }
-            btn1.innerHTML = 'GAS KAN!'; btn2.innerHTML = '<span class="text-lg mb-1">🔑</span> AMBIL PIN'; btn1.disabled = false; btn2.disabled = false; btn1.classList.remove('opacity-50'); btn2.classList.remove('opacity-50'); renderActiveBatch();
+            btn1.innerHTML = 'GAS KAN!'; btn2.innerHTML = 'AMBIL PIN'; btn1.disabled = false; btn2.disabled = false; btn1.classList.remove('opacity-50'); btn2.classList.remove('opacity-50'); renderActiveBatch();
         }
         document.getElementById('btnGas').addEventListener('click', () => prosesCheckout(null)); document.getElementById('btnPin').addEventListener('click', () => prosesCheckout('GAS.PIN'));
 
-        function renderActiveBatch() { const body = document.getElementById('activeTableBody'); body.innerHTML = currentActiveBatch.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Tidak ada task berjalan.</td></tr>'; let isProc = false; currentActiveBatch.forEach((item, i) => { let ui = item.status === 'LOADING' ? (isProc=true, '<span class="text-amber-500 animate-spin inline-block font-bold">⏳</span>') : item.status === 'SUCCESS' ? `<button onclick='showModalLog(${JSON.stringify(item.result).replace(/'/g, "'")})' class="bg-blue-500 hover:bg-blue-600 px-3 rounded text-[10px] text-white py-1.5 font-bold shadow transition">CEK</button>` : '❌'; body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 px-2 text-[10px] text-slate-400 font-bold">${i+1}</td><td class="py-3 px-2 font-mono font-bold text-[11px]">${item.nomor}</td><td class="py-3 px-2 text-[10px] font-black">${item.kodeToko}</td><td class="py-3 px-2 text-center">${ui}</td></tr>`; }); document.getElementById('pingIndicator').style.display = isProc ? 'block' : 'none'; }
-        function renderLogs() { const body = document.getElementById('logTableBody'); const logs = [...getMyLogs()].sort((a,b) => b.timestamp - a.timestamp); body.innerHTML = logs.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Log kosong.</td></tr>'; logs.forEach((log, i) => { body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 text-[10px] text-slate-400 font-bold">${logs.length-i}</td><td class="py-3 font-mono text-[10px] font-bold">${log.nomor}</td><td class="py-3 text-[10px] font-black">${log.kodeToko}</td><td class="py-3 text-right"><button onclick='showModalLog(${JSON.stringify(log.result).replace(/'/g, "'")})' class="bg-slate-800 dark:bg-slate-700 hover:bg-black px-3 py-1.5 rounded text-[10px] text-white font-bold transition">Buka</button></td></tr>`; }); }
+        function renderActiveBatch() { const body = document.getElementById('activeTableBody'); body.innerHTML = currentActiveBatch.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Tidak ada task berjalan.</td></tr>'; let isProc = false; currentActiveBatch.forEach((item, i) => { let ui = item.status === 'LOADING' ? (isProc=true, '<span class="text-amber-500 animate-spin inline-block font-bold">⏳</span>') : item.status === 'SUCCESS' ? `<button onclick='showModalLog(${JSON.stringify(item.result).replace(/'/g, "&#39;")})' class="bg-blue-500 hover:bg-blue-600 px-3 rounded text-[10px] text-white py-1.5 font-bold shadow transition">CEK</button>` : '❌'; body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 px-2 text-[10px] text-slate-400 font-bold">${i+1}</td><td class="py-3 px-2 font-mono font-bold text-[11px]">${item.nomor}</td><td class="py-3 px-2 text-[10px] font-black">${item.kodeToko}</td><td class="py-3 px-2 text-center">${ui}</td></tr>`; }); document.getElementById('pingIndicator').style.display = isProc ? 'block' : 'none'; }
+        
+        // 🔥 UPDATE FUNGSI RENDER LOG: TAMBAH CHECKBOX 🔥
+        function renderLogs() { 
+            const body = document.getElementById('logTableBody'); 
+            const logs = [...getMyLogs()].sort((a,b) => b.timestamp - a.timestamp); 
+            body.innerHTML = logs.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Log kosong.</td></tr>'; 
+            logs.forEach((log, i) => { 
+                body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3"><input type="checkbox" class="cb-log w-4 h-4 rounded text-blue-600 cursor-pointer" data-index="${i}"></td><td class="py-3 font-mono text-[10px] font-bold">${log.nomor}</td><td class="py-3 text-[10px] font-black">${log.kodeToko}</td><td class="py-3 text-right"><button onclick='showModalLog(${JSON.stringify(log.result).replace(/'/g, "&#39;")})' class="bg-slate-800 dark:bg-slate-700 hover:bg-black px-3 py-1.5 rounded text-[10px] text-white font-bold transition">Buka</button></td></tr>`; 
+            }); 
+            const cbAll = document.getElementById('cbAllLogs');
+            if(cbAll) cbAll.checked = false;
+        }
+
+        // 🔥 FUNGSI CEKLIS SEMUA 🔥
+        window.toggleAllLogs = function(source) {
+            const checkboxes = document.querySelectorAll('.cb-log');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        // 🔥 FUNGSI COPY MASSAL 🔥
+        window.copyLogTerpilih = function() {
+            const checkboxes = document.querySelectorAll('.cb-log:checked');
+            if (checkboxes.length === 0) return showToast("Pilih minimal satu transaksi!", "warning");
+            
+            const logs = [...getMyLogs()].sort((a,b) => b.timestamp - a.timestamp);
+            let combinedText = [];
+            
+            checkboxes.forEach(cb => {
+                const idx = parseInt(cb.dataset.index);
+                if (logs[idx] && logs[idx].result && logs[idx].result.text) {
+                    combinedText.push(logs[idx].result.text);
+                }
+            });
+            
+            if (combinedText.length === 0) return showToast("Teks transaksi kosong", "error");
+            
+            navigator.clipboard.writeText(combinedText.join('\n\n')).then(() => {
+                showToast(`${checkboxes.length} transaksi berhasil disalin!`, "success");
+            });
+        }
         
         window.bersihkanLogSaya = function() { if(confirm('Hapus histori log Anda secara permanen?')) { saveMyLogs([]); renderLogs(); renderNumbers(); showToast('Riwayat berhasil dibersihkan.', 'success'); } }
-        window.showModalLog = function(obj) { let h = obj.barcodeUrl ? `<div class="bg-white p-3 rounded-xl mb-4 shadow-inner border border-slate-200"><img src="${obj.barcodeUrl}" class="w-full mix-blend-multiply"></div>` : ''; h += `<pre class="text-[10px] whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-mono text-slate-700 dark:text-slate-300 shadow-inner">${obj.text||''}</pre>`; document.getElementById('modalContent').innerHTML = h; document.getElementById('modalLihat').classList.remove('hidden'); }
+        
+        // 🔥 UPDATE FUNGSI MODAL: TAMBAH TOMBOL COPY TEKS SATUAN 🔥
+        window.showModalLog = function(obj) { 
+            let h = obj.barcodeUrl ? `<div class="bg-white p-3 rounded-xl mb-4 shadow-inner border border-slate-200"><img src="${obj.barcodeUrl}" class="w-full mix-blend-multiply"></div>` : ''; 
+            h += `<pre id="modalPreText" class="text-[10px] whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-mono text-slate-700 dark:text-slate-300 shadow-inner">${obj.text||''}</pre>`; 
+            h += `<button onclick="copyModalText()" class="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 rounded-lg shadow transition text-xs">📋 Copy Teks</button>`;
+            document.getElementById('modalContent').innerHTML = h; 
+            document.getElementById('modalLihat').classList.remove('hidden'); 
+        }
+
+        // 🔥 FUNGSI COPY DI DALAM MODAL 🔥
+        window.copyModalText = function() {
+            const txt = document.getElementById('modalPreText').innerText;
+            navigator.clipboard.writeText(txt).then(() => showToast("Teks berhasil disalin!", "success"));
+        }
 
         async function doSearchToko() {
             const q = document.getElementById('inputSearchToko').value.trim().toLowerCase(); const box = document.getElementById('resultToko');
@@ -609,7 +679,7 @@
                 grid.innerHTML = '';
                 results.forEach(item => {
                     const pluStr = String(item.plu).trim(); const imgUrl = `https://raw.githubusercontent.com/Marsudi505/katalog-klik/main/${pluStr}.jpg`; const namaAman = item.nama ? item.nama : "Nama Item Unknown";
-                    grid.innerHTML += `<div onclick='showDetailProduct(${JSON.stringify(item).replace(/'/g, "'")})' class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 cursor-pointer hover:border-purple-500 hover:shadow-purple-500/20 transition-all transform hover:-translate-y-1 overflow-hidden relative group"><div class="h-28 bg-slate-50 dark:bg-slate-800 flex justify-center items-center p-2 border-b border-slate-100 dark:border-slate-700"><img src="${imgUrl}" class="max-h-full max-w-full object-contain filter drop-shadow group-hover:scale-110 transition duration-300" onerror="this.src='https://via.placeholder.com/150?text=No+Img'"></div><div class="p-3 flex flex-col h-24"><h4 class="text-[11px] font-black leading-tight text-slate-700 dark:text-slate-200 mb-1 line-clamp-3">${namaAman}</h4><div class="mt-auto flex justify-between items-center"><p class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">PLU: ${pluStr}</p><span class="text-[10px] text-purple-500 font-black">Cek Rak →</span></div></div></div>`;
+                    grid.innerHTML += `<div onclick='showDetailProduct(${JSON.stringify(item).replace(/'/g, "&#39;")})' class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 cursor-pointer hover:border-purple-500 hover:shadow-purple-500/20 transition-all transform hover:-translate-y-1 overflow-hidden relative group"><div class="h-28 bg-slate-50 dark:bg-slate-800 flex justify-center items-center p-2 border-b border-slate-100 dark:border-slate-700"><img src="${imgUrl}" class="max-h-full max-w-full object-contain filter drop-shadow group-hover:scale-110 transition duration-300" onerror="this.src='https://via.placeholder.com/150?text=No+Img'"></div><div class="p-3 flex flex-col h-24"><h4 class="text-[11px] font-black leading-tight text-slate-700 dark:text-slate-200 mb-1 line-clamp-3">${namaAman}</h4><div class="mt-auto flex justify-between items-center"><p class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">PLU: ${pluStr}</p><span class="text-[10px] text-purple-500 font-black">Cek Rak →</span></div></div></div>`;
                 });
             } catch (e) { grid.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4 font-bold bg-red-50 rounded-xl">Gagal menyambung ke server.</p>'; }
         }
@@ -691,7 +761,7 @@
                 const txLogs = [...logsArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 200); const actLogs = [...actArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 1000);
 
                 const lBody = document.getElementById('adminLogTable');
-                if (lBody) { lBody.innerHTML = ''; txLogs.forEach((l) => { const d = new Date(l.timestamp); const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; lBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-emerald-600">${l.username}</td><td class="font-mono">${l.nomor}</td><td>${l.kodeToko}</td><td><button onclick='showModalLog(${JSON.stringify(l.result).replace(/'/g, "'")})' class="bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded text-white text-[9px] shadow-sm">Cek</button></td></tr>`; }); }
+                if (lBody) { lBody.innerHTML = ''; txLogs.forEach((l) => { const d = new Date(l.timestamp); const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; lBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-emerald-600">${l.username}</td><td class="font-mono">${l.nomor}</td><td>${l.kodeToko}</td><td><button onclick='showModalLog(${JSON.stringify(l.result).replace(/'/g, "&#39;")})' class="bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded text-white text-[9px] shadow-sm">Cek</button></td></tr>`; }); }
 
                 const aBody = document.getElementById('adminActTable');
                 if(aBody) { 
@@ -699,16 +769,8 @@
                     actLogs.forEach((a) => { 
                         const d = new Date(a.timestamp); 
                         const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; 
-                        
-                        let detailStr = a.detail || ''; 
-                        let extraBtn = ''; 
-                        
-                        // 🔥 SUNTIKAN TOMBOL BUKA MAPS BERDASARKAN LOG GPS 🔥
-                        if (detailStr.includes('Titik GPS:')) { 
-                            let coords = detailStr.replace('Titik GPS:', '').trim(); 
-                            extraBtn = `<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords)}" target="_blank" class="inline-block mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded text-[9px] font-black hover:bg-blue-200 transition text-center shadow-sm">📍 BUKA MAPS</a>`; 
-                        } 
-
+                        let detailStr = a.detail || ''; let extraBtn = ''; 
+                        if (detailStr.includes('Titik GPS:')) { let coords = detailStr.replace('Titik GPS:', '').trim(); extraBtn = `<br><a href="http://googleusercontent.com/maps.google.com/?q=${encodeURIComponent(coords)}" target="_blank" class="inline-block mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded text-[9px] font-black hover:bg-blue-200 transition text-center shadow-sm">📍 BUKA MAPS</a>`; } 
                         aBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-blue-600">${a.username}</td><td class="text-[9px] font-bold text-slate-700 dark:text-slate-300">${a.action}</td><td class="font-mono text-slate-500 dark:text-slate-400 max-w-[120px] break-words">${detailStr}${extraBtn}</td></tr>`; 
                     }); 
                 }
