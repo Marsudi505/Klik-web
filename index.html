@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BAWX KlikAuto System</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script> 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script> tailwind.config = { darkMode: 'class' }; </script>
+    
     <style>
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -15,10 +18,25 @@
         .tab-active { background-color: #2563eb; color: #ffffff; border-color: #3b82f6; }
         .tab-inactive { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
         .dark .tab-inactive { background-color: #1e293b; color: #94a3b8; border-color: #334155; }
+        
+        body { background-color: #f8fafc; background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px); background-size: 24px 24px; }
+        .dark body { background-color: #0f172a; background-image: radial-gradient(#334155 1.5px, transparent 1.5px); }
+
+        .fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+        @keyframes fadeInUp { 0% { opacity: 0; transform: translateY(15px); } 100% { opacity: 1; transform: translateY(0); } }
+
+        .toast-enter { animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .toast-leave { animation: toastOut 0.3s ease-in forwards; }
+        @keyframes toastIn { 0% { opacity: 0; transform: translateY(-30px) scale(0.9); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toastOut { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-30px) scale(0.9); } }
+        
+        /* 🔥 FIX KANVAS BARCODE MOBILE 🔥 */
+        #outGenBarCanvas { max-width: 100%; height: auto; object-fit: contain; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-[#0f172a] dark:text-slate-300 font-sans min-h-screen flex flex-col items-center transition-colors duration-300">
+<body class="text-slate-800 dark:text-slate-300 font-sans min-h-screen flex flex-col items-center transition-colors duration-300">
 
+    <div id="toastContainer" class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center space-y-2 pointer-events-none px-4"></div>
     <audio id="soundSuccess" src="https://upload.wikimedia.org/wikipedia/commons/3/34/Sound_Effect_-_Positive_Bell.ogg" preload="auto"></audio>
     
     <a href="https://wa.me/6285790374090" target="_blank" class="fixed bottom-6 right-6 bg-[#25D366] text-white p-3.5 rounded-full shadow-2xl shadow-green-500/30 hover:scale-110 transition-transform z-50 flex items-center justify-center">
@@ -29,40 +47,47 @@
     <div id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-[#1e293b] shadow-2xl transform -translate-x-full transition-transform z-50 flex flex-col">
         <div class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-blue-600">
             <h2 class="font-black text-white text-lg tracking-widest">BAWX<span class="text-amber-400">MENU</span></h2>
-            <button onclick="toggleSidebar()" class="text-white hover:text-red-300 font-bold text-xl">&times;</button>
+            <button onclick="toggleSidebar()" class="text-white hover:text-red-300 font-bold text-xl">×</button>
         </div>
         <div class="p-4 space-y-3 flex-1">
-            <button onclick="switchMode('home')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">👋 Halaman Utama</button>
-            <button onclick="switchMode('dashboard')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">📦 Checkout Menu</button>
-            <button onclick="switchMode('search')" class="w-full text-left px-4 py-3 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-bold hover:bg-purple-200 transition text-sm shadow-sm border border-transparent hover:border-purple-300">🔍 Cari Barang</button>
-            <button onclick="switchMode('toko')" class="w-full text-left px-4 py-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-bold hover:bg-emerald-200 transition text-sm shadow-sm border border-transparent hover:border-emerald-300">🏪 Cari Toko</button>
-            <button id="btnMenuAdmin" onclick="switchMode('admin')" class="w-full text-left px-4 py-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-bold hover:bg-amber-200 transition text-sm hidden shadow-sm">👑 Admin Panel</button>
+            <button onclick="switchMode('home')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">Halaman Utama</button>
+            <button onclick="switchMode('dashboard')" class="w-full text-left px-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg font-bold hover:bg-blue-100 dark:hover:bg-blue-900/30 transition text-sm shadow-sm border border-transparent hover:border-blue-300">Checkout Menu</button>
+            <button onclick="switchMode('search')" class="w-full text-left px-4 py-3 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-lg font-bold hover:bg-purple-200 transition text-sm shadow-sm border border-transparent hover:border-purple-300">Cari Barang</button>
+            <button onclick="switchMode('toko')" class="w-full text-left px-4 py-3 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg font-bold hover:bg-emerald-200 transition text-sm shadow-sm border border-transparent hover:border-emerald-300">Cari Toko</button>
+            <button onclick="switchMode('generator')" class="w-full text-left px-4 py-3 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 rounded-lg font-bold hover:bg-pink-200 transition text-sm shadow-sm border border-transparent hover:border-pink-300">Buat QR/Barcode</button>
+            <button id="btnMenuAdmin" onclick="switchMode('admin')" class="w-full text-left px-4 py-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-lg font-bold hover:bg-amber-200 transition text-sm hidden shadow-sm mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">Admin Panel</button>
         </div>
         <div class="p-4 border-t border-slate-200 dark:border-slate-700">
-            <button onclick="logoutUser()" class="w-full bg-slate-800 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition">🚪 Logout Sistem</button>
+            <button onclick="logoutUser()" class="w-full bg-slate-800 hover:bg-red-600 text-white font-bold py-2 rounded-lg transition">Logout Sistem</button>
         </div>
     </div>
 
-    <div id="authScreen" class="w-full max-w-sm m-auto bg-white dark:bg-[#1e293b] rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] border border-slate-100 dark:border-slate-700 p-8 space-y-6 mt-10">
-        <div class="text-center">
-            <div class="w-24 h-24 mx-auto mb-2 flex items-center justify-center">
-                <img src="https://raw.githubusercontent.com/Marsudi505/Logo/main/logo.png" alt="Logo BAWX" class="w-full h-full object-contain drop-shadow-xl rounded-2xl" onerror="this.style.display='none'">
+    <div id="authScreen" class="relative w-full min-h-screen flex items-center justify-center overflow-hidden">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+        <div class="absolute bottom-10 right-10 w-72 h-72 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style="animation-delay: 2s;"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse" style="animation-delay: 4s;"></div>
+
+        <div class="relative z-10 w-full max-w-sm m-auto bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-xl rounded-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)] border border-white/40 dark:border-slate-700/50 p-8 space-y-6">
+            <div class="text-center">
+                <div class="w-24 h-24 mx-auto mb-2 flex items-center justify-center transform hover:rotate-12 transition duration-500">
+                    <img src="https://raw.githubusercontent.com/Marsudi505/Logo/main/logo.png" alt="Logo BAWX" class="w-full h-full object-contain drop-shadow-2xl rounded-2xl" onerror="this.style.display='none'">
+                </div>
+                <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight mt-2 mb-2">BAWX <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-emerald-500">SYSTEM</span></h1>
             </div>
-            <h1 class="text-3xl font-black text-slate-800 dark:text-white tracking-tight mt-2 mb-2">BAWX <span class="text-blue-500">SYSTEM</span></h1>
-        </div>
-        <form id="authForm" class="space-y-5">
-            <div><label class="block text-[10px] font-black tracking-widest text-slate-400 mb-1">USERNAME</label><input type="text" id="username" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg p-3 outline-none text-slate-800 dark:text-white lowercase focus:border-blue-500 transition" required autocomplete="off"></div>
-            <div><label class="block text-[10px] font-black tracking-widest text-slate-400 mb-1">PASSWORD</label><input type="password" id="password" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg p-3 outline-none text-slate-800 dark:text-white focus:border-blue-500 transition" required></div>
-            <button type="submit" id="btnSubmitAuth" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-lg shadow-xl shadow-blue-500/30 transition-all transform hover:-translate-y-1">MASUK WORKSPACE</button>
-            <p id="authMessage" class="text-xs text-center hidden font-bold"></p>
-        </form>
-        <div class="text-center pt-4 border-t border-slate-100 dark:border-slate-700 mt-4">
-            <p id="toggleText" class="text-xs text-slate-500">Belum memiliki akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Minta Akses</span></p>
+            <form id="authForm" class="space-y-5">
+                <div><label class="block text-[10px] font-black tracking-widest text-slate-400 mb-1">USERNAME</label><input type="text" id="username" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg p-3 outline-none text-slate-800 dark:text-white lowercase focus:border-blue-500 transition" required autocomplete="off"></div>
+                <div><label class="block text-[10px] font-black tracking-widest text-slate-400 mb-1">PASSWORD</label><input type="password" id="password" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-200 dark:border-slate-700 rounded-lg p-3 outline-none text-slate-800 dark:text-white focus:border-blue-500 transition" required></div>
+                <button type="submit" id="btnSubmitAuth" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-3.5 rounded-lg shadow-xl shadow-blue-500/30 transition-all transform hover:-translate-y-1">MASUK WORKSPACE</button>
+                <p id="authMessage" class="text-xs text-center hidden font-bold"></p>
+            </form>
+            <div class="text-center pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
+                <p id="toggleText" class="text-xs text-slate-500">Belum memiliki akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Minta Akses</span></p>
+            </div>
         </div>
     </div>
 
     <div id="mainWorkspace" class="w-full max-w-lg hidden flex-col pb-10 min-h-screen relative">
-        <div class="flex justify-between items-center py-4 px-3 mb-6 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-lg sticky top-0 z-30 rounded-b-2xl shadow-sm border-b border-slate-200 dark:border-slate-700">
+        <div class="flex justify-between items-center py-4 px-3 mb-6 bg-white/70 dark:bg-[#1e293b]/70 backdrop-blur-md sticky top-0 z-30 rounded-b-2xl shadow-sm border-b border-slate-200 dark:border-slate-700/50">
             <div class="flex items-center space-x-3">
                 <button onclick="toggleSidebar()" class="text-2xl p-1 text-slate-700 dark:text-slate-300 hover:text-blue-500 transition transform hover:scale-110">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h7"></path></svg>
@@ -73,7 +98,14 @@
             </div>
             <div class="flex items-center space-x-3">
                 <span class="text-[10px] font-bold text-blue-700 bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-full shadow-sm" id="displayUsername">User</span>
-                <button onclick="toggleTheme()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full text-sm transition shadow-inner border border-slate-200 dark:border-slate-600"><span id="iconSun" class="hidden">☀️</span><span id="iconMoon">🌙</span></button>
+                <button onclick="toggleTheme()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full text-sm transition shadow-inner border border-slate-200 dark:border-slate-600">
+                    <span id="iconSun" class="hidden">
+                        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </span>
+                    <span id="iconMoon">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </span>
+                </button>
             </div>
         </div>
 
@@ -82,19 +114,21 @@
                 <div class="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
                 <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-black/10 rounded-full blur-2xl"></div>
                 <div class="relative z-10">
-                    <span class="text-5xl mb-4 block drop-shadow-lg animate-bounce">👋</span>
                     <h2 class="font-black text-2xl mb-1 tracking-tight">Selamat Datang!</h2>
                     <p class="text-xs text-blue-100 mb-6 font-medium tracking-wide">Sistem Operasi Terpadu BAWX KlikAuto</p>
                     
                     <div class="grid grid-cols-1 gap-3 text-left">
-                        <a href="https://co.klikidm.my.id" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
-                            <span class="text-2xl mr-3 group-hover:scale-110 transition">📦</span> <div><h4 class="font-bold text-sm">Checkout Order</h4><p class="text-[9px] text-blue-100">Masuk ke kasir otomatis</p></div>
+                        <a href="javascript:void(0)" onclick="switchMode('dashboard')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
+                            <div><h4 class="font-bold text-sm">Checkout Order</h4></div>
                         </a>
-                        <a href="https://plu.klikidm.my.id" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
-                            <span class="text-2xl mr-3 group-hover:scale-110 transition">🔍</span> <div><h4 class="font-bold text-sm">Cari Barang (PLU)</h4><p class="text-[9px] text-blue-100">Lacak foto dan planogram rak</p></div>
+                        <a href="javascript:void(0)" onclick="switchMode('search')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
+                            <div><h4 class="font-bold text-sm">Cari Barang (PLU)</h4></div>
                         </a>
-                        <a href="https://toko.klikidm.my.id" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
-                            <span class="text-2xl mr-3 group-hover:scale-110 transition">🏪</span> <div><h4 class="font-bold text-sm">Radar Toko</h4><p class="text-[9px] text-blue-100">Cek status dan jarak GPS 10KM</p></div>
+                        <a href="javascript:void(0)" onclick="switchMode('toko')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
+                            <div><h4 class="font-bold text-sm">Radar Toko</h4></div>
+                        </a>
+                        <a href="javascript:void(0)" onclick="switchMode('generator')" class="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center transition shadow-lg group">
+                            <div><h4 class="font-bold text-sm">QR & Barcode</h4></div>
                         </a>
                     </div>
                 </div>
@@ -103,15 +137,15 @@
 
         <div id="areaDashboard" class="space-y-6 hidden px-3">
             <div class="flex space-x-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
-                <button onclick="switchTab('order')" id="btnTabOrder" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-active transition-all shadow-md">📦 PESAN</button>
-                <button onclick="switchTab('transaksi')" id="btnTabTransaksi" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-inactive transition-all relative">🔄 TRANSAKSI <span id="pingIndicator" class="absolute top-1 right-2 flex h-2.5 w-2.5 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 shadow-lg shadow-emerald-500/50"></span></span></button>
-                <button onclick="switchTab('log')" id="btnTabLog" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-inactive transition-all">📜 RIWAYAT</button>
+                <button onclick="switchTab('order')" id="btnTabOrder" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-active transition-all shadow-md">PESAN</button>
+                <button onclick="switchTab('transaksi')" id="btnTabTransaksi" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-inactive transition-all relative">TRANSAKSI <span id="pingIndicator" class="absolute top-1 right-2 flex h-2.5 w-2.5 hidden"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-50 shadow-lg shadow-emerald-500/50"></span></span></button>
+                <button onclick="switchTab('log')" id="btnTabLog" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-inactive transition-all">RIWAYAT</button>
             </div>
             
             <div id="viewOrder" class="space-y-5 block">
                 <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div class="bg-slate-50 dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col space-y-3">
-                        <h2 class="font-black text-slate-700 dark:text-slate-200 text-sm flex items-center"><span class="mr-2">📱</span> Database Nomor WhatsApp</h2>
+                        <h2 class="font-black text-slate-700 dark:text-slate-200 text-sm flex items-center">Database Nomor WhatsApp</h2>
                         <div class="flex space-x-2">
                             <button id="btnSelectUnused" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] px-3 py-1.5 rounded-md font-bold transition shadow">Pilih Baru</button>
                             <button id="btnSelectUsed" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] px-3 py-1.5 rounded-md font-bold transition shadow">Pilih Terpakai</button>
@@ -122,13 +156,13 @@
                     <div class="p-4 space-y-4">
                         <div id="numberList" class="max-h-48 overflow-y-auto space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-2 bg-slate-50 dark:bg-[#0f172a] custom-scrollbar"></div>
                         <textarea id="inputNumbers" rows="2" placeholder="Paste deretan nomor disini (08xxx)..." class="w-full bg-white dark:bg-[#0f172a] border border-slate-300 dark:border-slate-600 rounded-lg p-3 text-sm outline-none focus:border-blue-500 transition shadow-inner"></textarea>
-                        <button id="btnSimpanNomor" class="w-full bg-slate-800 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:-translate-y-0.5">💾 SIMPAN KE DATABASE</button>
+                        <button id="btnSimpanNomor" class="w-full bg-slate-800 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:-translate-y-0.5">SIMPAN KE DATABASE</button>
                     </div>
                 </div>
                 
                 <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-5 space-y-5 relative overflow-hidden">
                     <div class="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full z-0"></div>
-                    <h2 class="font-black text-slate-700 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-700 pb-2 relative z-10">🚀 Eksekusi Checkout</h2>
+                    <h2 class="font-black text-slate-700 dark:text-slate-200 text-sm border-b border-slate-100 dark:border-slate-700 pb-2 relative z-10">Eksekusi Checkout</h2>
                     <div class="grid grid-cols-2 gap-4 relative z-10">
                         <div><label class="block text-[10px] font-bold text-slate-400 mb-1">KODE TOKO</label><input type="text" id="kodeToko" placeholder="Contoh: F010" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm uppercase outline-none focus:border-blue-500 transition"></div>
                         <div><label class="block text-[10px] font-bold text-slate-400 mb-1">PLU BARANG : QTY</label><input type="text" id="pluToko" placeholder="200123:1" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-blue-500 transition"></div>
@@ -143,8 +177,8 @@
                         </select>
                     </div>
                     <div class="flex space-x-3 mt-2 relative z-10">
-                        <button id="btnPin" class="w-1/3 bg-slate-800 dark:bg-slate-700 text-white font-bold py-3.5 rounded-xl shadow-lg text-[11px] hover:bg-slate-700 transition flex flex-col items-center justify-center leading-none"><span class="text-lg mb-1">🔑</span> AMBIL PIN</button>
-                        <button id="btnGas" class="w-2/3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black py-3.5 rounded-xl shadow-xl shadow-emerald-500/30 transition transform hover:-translate-y-1 text-lg tracking-wider">GAS KAN!</button>
+                        <button id="btnPin" class="w-1/3 bg-slate-800 dark:bg-slate-700 text-white font-bold py-3.5 rounded-xl shadow-lg text-[11px] hover:bg-slate-700 transition flex flex-col items-center justify-center leading-none">AMBIL PIN</button>
+                        <button id="btnGas" class="w-2/3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black py-3.5 rounded-xl shadow-xl shadow-emerald-500/30 transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] text-lg tracking-wider">GAS KAN!</button>
                     </div>
                 </div>
             </div>
@@ -154,7 +188,7 @@
             </div>
             
             <div id="viewLog" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl p-4 border border-slate-200 dark:border-slate-700">
-                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-sm">Riwayat Sukses</h3><button onclick="bersihkanLogSaya()" class="bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold px-3 py-1.5 rounded-md transition">Bersihkan</button></div>
+                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-sm">Riwayat Sukses</h3><button onclick="bersihkanLogSaya()" class="bg-red-100 text-red-600 hover:bg-red-200 text-[10px] font-bold px-3 py-1.5 rounded-md transition border border-red-200">Bersihkan</button></div>
                 <table class="w-full text-sm text-left"><thead class="text-[10px] uppercase font-black text-slate-400 border-b border-slate-200 dark:border-slate-700"><tr><th class="py-2">No</th><th>Nomor WA</th><th>Toko</th><th class="text-right">Aksi</th></tr></thead><tbody id="logTableBody" class="divide-y divide-slate-100 dark:divide-slate-800"></tbody></table>
             </div>
         </div>
@@ -185,7 +219,6 @@
 
             <div id="resultGrid" class="grid grid-cols-2 gap-4">
                 <div class="col-span-2 flex flex-col items-center justify-center py-10 opacity-50">
-                    <span class="text-4xl mb-3">📦</span>
                     <p class="text-center text-slate-500 dark:text-slate-400 text-sm font-medium">Gudang Siap. Mulai pencarian Anda.</p>
                 </div>
             </div>
@@ -230,7 +263,6 @@
                         </div>
 
                         <div class="mt-4 flex items-start bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-900/50">
-                            <span class="text-red-500 mr-2 text-lg leading-none">⚠️</span>
                             <div>
                                 <span class="block text-[10px] font-black text-red-500 tracking-wider mb-0.5">ATURAN RETUR</span>
                                 <span id="txtRetur" class="block text-xs font-bold text-red-700 dark:text-red-400">-</span>
@@ -264,20 +296,90 @@
             <div id="resultToko" class="space-y-4 pb-4"></div>
         </div>
 
+        <div id="areaGenerator" class="space-y-6 hidden px-3">
+            <div class="bg-gradient-to-r from-pink-500 to-rose-600 p-6 rounded-3xl shadow-xl text-center text-white relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-4 translate-y-4">
+                    <svg class="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+                </div>
+                <h2 class="font-black text-2xl mb-1 tracking-tight relative z-10">QR & BARCODE</h2>
+                <p class="text-xs text-pink-100 mb-2 relative z-10 font-bold tracking-widest uppercase">GENERATOR STUDIO</p>
+            </div>
+
+            <div class="flex space-x-1 bg-slate-200 dark:bg-slate-800 p-1 rounded-xl shadow-inner">
+                <button onclick="setGenMode('qr')" id="btnGenQr" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-active transition-all shadow-md">QR CODE</button>
+                <button onclick="setGenMode('barcode')" id="btnGenBar" class="flex-1 py-2.5 rounded-lg font-bold text-[11px] tab-inactive transition-all">BARCODE</button>
+            </div>
+
+            <div id="panelGenQr" class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
+                <div class="flex gap-2">
+                    <button onclick="setGenQrType('url')" id="btnGenQrUrl" class="px-4 py-2 text-xs font-bold rounded-lg bg-pink-100 text-pink-600 border border-pink-200 transition">URL</button>
+                    <button onclick="setGenQrType('text')" id="btnGenQrText" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 transition">Teks</button>
+                </div>
+                <div>
+                    <label id="lblGenQr" class="block text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Masukkan URL</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="inputGenQr" placeholder="https://example.com" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-pink-500 transition" onkeypress="if(event.key==='Enter') actionGenerateQR()">
+                        <button onclick="actionGenerateQR()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 rounded-lg shadow-lg transition text-sm">BUAT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panelGenBar" class="hidden bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 tracking-wider uppercase">Masukkan 12 Digit Angka</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="inputGenBar" placeholder="Contoh: 590123412345" maxlength="12" class="w-full bg-slate-50 dark:bg-[#0f172a] border border-slate-300 dark:border-slate-600 rounded-lg p-2.5 text-sm outline-none focus:border-pink-500 transition font-mono font-bold" oninput="this.value=this.value.replace(/\D/g,'').slice(0,12)" onkeypress="if(event.key==='Enter') actionGenerateBarcode()">
+                        <button onclick="actionGenerateBarcode()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold px-4 rounded-lg shadow-lg transition text-sm">BUAT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panelGenResult" class="hidden flex-col items-center bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-6 relative overflow-hidden">
+                <div class="absolute top-0 w-full h-1 bg-gradient-to-r from-pink-500 to-rose-500"></div>
+                
+                <div id="outGenQrWrapper" class="hidden flex-col items-center w-full">
+                    <div id="outGenQrBox" class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm"></div>
+                    <p id="outGenQrText" class="mt-4 text-[11px] font-mono font-bold text-slate-500 text-center break-all px-4"></p>
+                    <div class="flex gap-3 mt-4 w-full">
+                        <button onclick="downloadQR()" class="flex-1 bg-slate-800 dark:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-lg shadow transition hover:bg-black">Unduh PNG</button>
+                        <button id="btnGenQrCopy" onclick="copyQrContent()" class="flex-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-lg shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-800">Salin Teks</button>
+                        <a id="btnGenQrUrl" href="#" target="_blank" class="hidden flex-1 border border-blue-300 text-blue-600 text-xs font-bold py-2.5 rounded-lg shadow-sm transition hover:bg-blue-50 text-center">Buka URL</a>
+                    </div>
+                </div>
+
+                <div id="outGenBarWrapper" class="hidden flex-col items-center w-full">
+                    <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-full flex justify-center overflow-x-auto">
+                        <canvas id="outGenBarCanvas"></canvas>
+                    </div>
+                    <p id="outGenBarText" class="mt-4 text-sm font-mono font-black text-pink-500 tracking-widest"></p>
+                    <div class="flex gap-3 mt-4 w-full">
+                        <button onclick="downloadBarcode()" class="flex-1 bg-slate-800 dark:bg-slate-700 text-white text-xs font-bold py-2.5 rounded-lg shadow transition hover:bg-black">Unduh PNG</button>
+                        <button onclick="copyBarcode()" class="flex-1 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-lg shadow-sm transition hover:bg-slate-100 dark:hover:bg-slate-800">Salin Kode</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="areaAdmin" class="space-y-6 hidden px-3 pb-8">
-            <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-5 rounded-2xl shadow text-white flex justify-between items-center"><h2 class="font-black text-lg tracking-wide">👑 ADMIN CENTER</h2><span class="text-3xl opacity-50">🛡️</span></div>
+            <div class="bg-gradient-to-r from-amber-500 to-orange-600 p-5 rounded-2xl shadow text-white flex justify-between items-center"><h2 class="font-black text-lg tracking-wide">ADMIN CENTER</h2></div>
             
-            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4"><h3 class="font-black text-slate-800 dark:text-white mb-3">👥 Manage Access</h3><div class="flex space-x-2 mb-4"><input type="text" id="newUsername" placeholder="Username" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 text-xs rounded-lg outline-none"><input type="text" id="newPassword" placeholder="Password" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 text-xs rounded-lg outline-none"><button onclick="adminAddUser()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow">ADD</button></div><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="text-slate-400 border-b dark:border-slate-700"><tr><th class="py-2">User</th><th>Pass</th><th>Aksi</th></tr></thead><tbody id="adminUserTable"></tbody></table></div></div>
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4">
+                <h3 class="font-black text-slate-800 dark:text-white mb-3">Menu Control (Global)</h3>
+                <div class="grid grid-cols-2 gap-4" id="adminMenuToggles">
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4"><h3 class="font-black text-slate-800 dark:text-white mb-3">Manage Access</h3><div class="flex space-x-2 mb-4"><input type="text" id="newUsername" placeholder="Username" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 text-xs rounded-lg outline-none"><input type="text" id="newPassword" placeholder="Password" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-2.5 text-xs rounded-lg outline-none"><button onclick="adminAddUser()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-700 transition">ADD</button></div><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead class="text-slate-400 border-b dark:border-slate-700"><tr><th class="py-2">User</th><th>Pass</th><th>Akses</th><th>Aksi</th></tr></thead><tbody id="adminUserTable"></tbody></table></div></div>
             
             <div class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4">
                 <div class="flex justify-between items-center border-b dark:border-slate-700 pb-3 mb-3">
-                    <h3 class="font-bold text-slate-800 dark:text-white">📜 Sistem Log Terpadu</h3>
-                    <button onclick="loadAdminData()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 text-[10px] rounded-md font-bold transition">🔄 Refresh</button>
+                    <h3 class="font-bold text-slate-800 dark:text-white">Sistem Log Terpadu</h3>
+                    <button onclick="loadAdminData()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-3 py-1 text-[10px] rounded-md font-bold transition">Refresh</button>
                 </div>
                 
                 <div class="flex space-x-2 mb-3">
-                    <button onclick="switchAdminTab('transaksi')" id="btnAdminTabTx" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">📦 Log Transaksi</button>
-                    <button onclick="switchAdminTab('kegiatan')" id="btnAdminTabAct" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700">🔍 Log Kegiatan</button>
+                    <button onclick="switchAdminTab('transaksi')" id="btnAdminTabTx" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">Log Transaksi</button>
+                    <button onclick="switchAdminTab('kegiatan')" id="btnAdminTabAct" class="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700">Log Kegiatan</button>
                 </div>
 
                 <div id="adminViewTx" class="overflow-x-auto max-h-80 border border-slate-100 dark:border-slate-800 rounded-lg">
@@ -304,44 +406,44 @@
                         <span id="statTotalAct" class="block text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1">0</span>
                     </div>
                     <div class="bg-amber-50 dark:bg-amber-900/20 p-2 rounded-xl text-center border border-amber-100 dark:border-amber-800/50 shadow-inner">
-                        <span class="block text-[8px] font-black text-slate-500 uppercase tracking-widest">Top User ⭐</span>
+                        <span class="block text-[8px] font-black text-slate-500 uppercase tracking-widest">Top User</span>
                         <span id="statTopUser" class="block text-[10px] leading-tight font-black text-amber-600 dark:text-amber-400 mt-2 break-words truncate px-1">-</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <footer class="mt-auto pt-8 text-center text-[10px] font-black tracking-widest text-slate-400 pb-6 uppercase">© 2026 BAWX Enterprise. V-7.1</footer>
+        <footer class="mt-auto pt-8 text-center text-[10px] font-black tracking-widest text-slate-400 pb-6 uppercase">© 2026 BAWX Enterprise.</footer>
     </div>
 
     <div id="modalLihat" class="fixed inset-0 bg-slate-900/80 hidden flex justify-center items-center p-4 z-50">
         <div class="bg-white dark:bg-[#1e293b] w-full max-w-sm rounded-2xl overflow-hidden relative shadow-2xl">
-            <button onclick="document.getElementById('modalLihat').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-red-500 font-bold text-xl">&times;</button>
+            <button onclick="document.getElementById('modalLihat').classList.add('hidden')" class="absolute top-3 right-4 text-slate-400 hover:text-red-500 font-bold text-xl">×</button>
             <div class="p-4 border-b dark:border-slate-700 bg-slate-50 dark:bg-slate-800"><h3 class="font-black text-sm">Detail Transaksi</h3></div>
             <div class="p-5 max-h-[70vh] overflow-y-auto" id="modalContent"></div>
         </div>
     </div>
 
     <script>
+        window.showToast = function(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            let colors = 'bg-slate-800 text-white border border-slate-700'; let icon = 'ℹ️';
+            if(type === 'success') { colors = 'bg-emerald-500 text-white border border-emerald-400 shadow-emerald-500/30'; icon = '✅'; if(navigator.vibrate) navigator.vibrate(50); } 
+            else if(type === 'error') { colors = 'bg-red-500 text-white border border-red-400 shadow-red-500/30'; icon = '❌'; if(navigator.vibrate) navigator.vibrate([50, 50, 50]); } 
+            else if(type === 'warning') { colors = 'bg-amber-500 text-white border border-amber-400 shadow-amber-500/30'; icon = '⚠️'; if(navigator.vibrate) navigator.vibrate(30); }
+            toast.className = `flex items-center space-x-3 px-4 py-3 rounded-2xl shadow-xl text-[12px] font-bold pointer-events-auto toast-enter ${colors}`;
+            toast.innerHTML = `<span class="text-lg leading-none">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.replace('toast-enter', 'toast-leave'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
         function toggleTheme() { document.documentElement.classList.toggle('dark'); const isDark = document.documentElement.classList.contains('dark'); localStorage.setItem('bawx_theme', isDark ? 'dark' : 'light'); document.getElementById('iconSun').classList.toggle('hidden', !isDark); document.getElementById('iconMoon').classList.toggle('hidden', isDark); }
         if (localStorage.getItem('bawx_theme') === 'dark' || (!localStorage.getItem('bawx_theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) { document.documentElement.classList.add('dark'); document.getElementById('iconSun').classList.remove('hidden'); document.getElementById('iconMoon').classList.add('hidden'); }
 
-        let dbTokoLokal = null;
-        let dbRakLokal = null;
-        let dbBarcodeLokal = null;
-
-        async function muatDataKatalog() {
-            if(!dbRakLokal) {
-                fetch('https://raw.githubusercontent.com/Marsudi505/Listing/main/listing.json')
-                .then(r => r.json()).then(data => dbRakLokal = data).catch(() => dbRakLokal = {});
-            }
-            if(!dbBarcodeLokal) {
-                fetch('https://raw.githubusercontent.com/Marsudi505/Barcodes/main/barcodesheet.json')
-                .then(r => r.json()).then(data => dbBarcodeLokal = data).catch(() => dbBarcodeLokal = []);
-            }
-        }
-
         let currentUser = null; let currentRole = null; let currentActiveBatch = []; let isRegisterMode = false;
+        let globalMenus = { dashboard: true, search: true, toko: true, generator: true };
+
         function getDbKey(type) { return `${currentUser}_bawx_${type}`; }
         function getNumbers() { return JSON.parse(localStorage.getItem(getDbKey('numbers'))) || []; }
         function getMyLogs() { return JSON.parse(localStorage.getItem(getDbKey('logs'))) || []; }
@@ -350,30 +452,19 @@
 
         function catatAktivitas(action, detail) {
             if(!currentUser) return;
-            fetch('/api/log/activity', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: currentUser, action: action, detail: detail, timestamp: Date.now() })
-            }).catch(e => {}); 
+            fetch('/api/log/activity', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: currentUser, action: action, detail: detail, timestamp: Date.now() }) }).catch(e => {}); 
         }
 
-        function hitungJarak(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             if (localStorage.getItem('bawx_session')) { 
                 currentUser = localStorage.getItem('bawx_session'); 
                 currentRole = localStorage.getItem('bawx_role'); 
-                showWorkspace(); 
-                muatDataKatalog(); 
+                try {
+                    const res = await fetch('/api/settings');
+                    const data = await res.json();
+                    if(data.menus) globalMenus = data.menus;
+                } catch(e){}
+                showWorkspace();
             }
         });
 
@@ -381,29 +472,29 @@
         
         function switchMode(mode) {
             toggleSidebar();
-            // 1. Sembunyikan SEMUA layar (Termasuk layar Home baru)
-            ['areaHome', 'areaDashboard', 'areaAdmin', 'areaSearch', 'areaToko', 'areaDetail'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('hidden');
+            if (['dashboard', 'search', 'toko', 'generator'].includes(mode)) {
+                if (globalMenus[mode] === false && currentRole === 'user') {
+                    showToast('Maaf, menu sedang di-OFF-kan oleh Admin.', 'warning'); return;
+                }
+            }
+            ['areaHome', 'areaDashboard', 'areaAdmin', 'areaSearch', 'areaToko', 'areaDetail', 'areaGenerator'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.classList.add('hidden');
             });
-            // 2. Munculkan area yang sesuai
-            if(mode === 'home') { document.getElementById('areaHome').classList.remove('hidden'); }
-            else if(mode === 'dashboard') { document.getElementById('areaDashboard').classList.remove('hidden'); }
-            else if(mode === 'admin') { document.getElementById('areaAdmin').classList.remove('hidden'); loadAdminData(); }
-            else if(mode === 'search') { document.getElementById('areaSearch').classList.remove('hidden'); muatDataKatalog(); }
-            else if(mode === 'toko') { document.getElementById('areaToko').classList.remove('hidden'); }
+            let activeEl = null;
+            if(mode === 'home') activeEl = document.getElementById('areaHome');
+            else if(mode === 'dashboard') activeEl = document.getElementById('areaDashboard');
+            else if(mode === 'admin') { activeEl = document.getElementById('areaAdmin'); loadAdminData(); }
+            else if(mode === 'search') activeEl = document.getElementById('areaSearch');
+            else if(mode === 'toko') activeEl = document.getElementById('areaToko');
+            else if(mode === 'generator') activeEl = document.getElementById('areaGenerator');
+
+            if(activeEl) { activeEl.classList.remove('hidden'); activeEl.classList.remove('fade-in-up'); void activeEl.offsetWidth; activeEl.classList.add('fade-in-up'); }
         }
 
         window.toggleAuthMode = function() { 
-            isRegisterMode = !isRegisterMode; 
-            document.getElementById('authMessage').classList.add('hidden'); 
-            if (isRegisterMode) { 
-                document.getElementById('btnSubmitAuth').innerText = "DAFTAR SEKARANG"; 
-                document.getElementById('toggleText').innerHTML = `Sudah punya akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Login Disini</span>`; 
-            } else { 
-                document.getElementById('btnSubmitAuth').innerText = "MASUK WORKSPACE"; 
-                document.getElementById('toggleText').innerHTML = `Belum memiliki akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Minta Akses</span>`; 
-            } 
+            isRegisterMode = !isRegisterMode; document.getElementById('authMessage').classList.add('hidden'); 
+            if (isRegisterMode) { document.getElementById('btnSubmitAuth').innerText = "DAFTAR SEKARANG"; document.getElementById('toggleText').innerHTML = `Sudah punya akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Login Disini</span>`; } 
+            else { document.getElementById('btnSubmitAuth').innerText = "MASUK WORKSPACE"; document.getElementById('toggleText').innerHTML = `Belum memiliki akses? <span onclick="toggleAuthMode()" class="text-blue-500 font-bold cursor-pointer hover:underline">Minta Akses</span>`; } 
         }
 
         document.getElementById('authForm').addEventListener('submit', async (e) => {
@@ -411,369 +502,313 @@
             try {
                 const urlApi = isRegisterMode ? '/api/register' : '/api/login';
                 const res = await fetch(urlApi, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: document.getElementById('username').value.trim().toLowerCase(), password: document.getElementById('password').value }) });
-                const data = await res.json(); msg.classList.remove('hidden'); msg.innerText = data.message || "Berhasil!"; msg.className = `text-xs text-center mt-3 ${data.success?'text-emerald-500':'text-red-500'}`;
-                
+                const data = await res.json(); 
                 if (data.success && !isRegisterMode) { 
+                    showToast("Login Berhasil! Mengalihkan...", "success");
                     currentUser = data.username; currentRole = data.role || 'user'; 
-                    localStorage.setItem('bawx_session', currentUser); 
-                    localStorage.setItem('bawx_role', currentRole); 
-                    setTimeout(()=>{showWorkspace(); muatDataKatalog();}, 500); 
+                    if(data.settings && data.settings.menus) globalMenus = data.settings.menus; 
+                    localStorage.setItem('bawx_session', currentUser); localStorage.setItem('bawx_role', currentRole); 
+                    setTimeout(()=>{showWorkspace();}, 500); 
                 } else if(data.success && isRegisterMode) { 
-                    setTimeout(toggleAuthMode, 1000); 
-                }
-            } catch (err) { msg.classList.remove('hidden'); msg.innerText = "Error server lokal."; msg.className = "text-xs text-center text-red-500 mt-3"; } btn.disabled = false;
+                    showToast("Pendaftaran berhasil! Silakan login.", "success"); setTimeout(toggleAuthMode, 1000); 
+                } else { showToast(data.message || "Gagal masuk sistem.", "error"); }
+            } catch (err) { showToast("Error server lokal.", "error"); } btn.disabled = false;
         });
 
         function showWorkspace() { 
             document.getElementById('authScreen').classList.add('hidden'); 
             document.getElementById('mainWorkspace').classList.remove('hidden'); 
-            document.getElementById('displayUsername').innerHTML = `👤 ${currentUser.toUpperCase()} ${currentRole==='admin'?'👑':''}`; 
-            document.getElementById('btnMenuAdmin').classList.toggle('hidden', currentRole !== 'admin'); 
-            renderNumbers(); 
-            renderLogs(); 
-            switchTab('order'); 
-            
-            // 🔥 OTOMATISASI SENSOR SUBDOMAIN 🔥
-            const hostURL = window.location.hostname;
-            
-            if (hostURL.startsWith('toko.')) {
-                switchMode('toko');
-            } else if (hostURL.startsWith('plu.')) {
-                switchMode('search');
-            } else if (hostURL.startsWith('co.')) {
-                switchMode('dashboard');
-            } else {
-                switchMode('home');
-            }
+            let roleLabel = currentRole === 'owner' ? '👑 OWNER' : currentRole === 'admin' ? '🛡️ ADMIN' : '';
+            document.getElementById('displayUsername').innerHTML = `👤 ${currentUser.toUpperCase()} ${roleLabel}`; 
+            document.getElementById('btnMenuAdmin').classList.toggle('hidden', currentRole === 'user'); 
+            renderNumbers(); renderLogs(); switchTab('order'); switchMode('home');
         }
         
         function logoutUser() { localStorage.removeItem('bawx_session'); localStorage.removeItem('bawx_role'); location.reload(); }
         function switchTab(tab) { ['Order', 'Transaksi', 'Log'].forEach(t => { document.getElementById('view' + t).classList.add('hidden'); document.getElementById('btnTab' + t).classList.replace('tab-active', 'tab-inactive'); }); document.getElementById('view' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.remove('hidden'); document.getElementById('btnTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.replace('tab-inactive', 'tab-active'); }
         
         function renderNumbers() { const listEl = document.getElementById('numberList'); const nums = getNumbers(); const usedSet = new Set(getMyLogs().map(l => l.nomor)); listEl.innerHTML = nums.length ? '' : '<p class="text-xs text-center text-slate-400 py-4 font-bold">Database Kosong.</p>'; nums.forEach((n, i) => { const isUsed = usedSet.has(n); listEl.innerHTML += `<div class="flex items-center space-x-3 p-2 border-b dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition rounded"><input type="checkbox" class="num-checkbox w-4 h-4 rounded text-blue-600 focus:ring-blue-500" value="${n}"><span class="text-[11px] font-mono font-bold flex-1 ${isUsed ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-300'}">${i+1}. ${n}</span>${isUsed ? '<span class="text-[9px] text-red-500 bg-red-100/50 border border-red-200 px-1.5 py-0.5 rounded font-black">USED</span>' : ''}</div>`; }); }
-        document.getElementById('btnSimpanNomor').addEventListener('click', () => { const newNums = document.getElementById('inputNumbers').value.split(/[\n,]+/).map(n => n.replace(/\D/g, '')).filter(n => n.length > 8); let db = getNumbers(); newNums.forEach(n => { let f = n.startsWith('62')?'0'+n.substring(2):n; if(!db.includes(f)) db.push(f); }); saveNumbers(db); document.getElementById('inputNumbers').value = ''; renderNumbers(); });
+        document.getElementById('btnSimpanNomor').addEventListener('click', () => { const rawInput = document.getElementById('inputNumbers').value.trim(); if(!rawInput) return showToast('Kolom input masih kosong!', 'warning'); const newNums = rawInput.split(/[\n,]+/).map(n => n.replace(/\D/g, '')).filter(n => n.length > 8); if(!newNums.length) return showToast('Tidak ada format nomor yang valid!', 'error'); let db = getNumbers(); let countAdded = 0; newNums.forEach(n => { let f = n.startsWith('62')?'0'+n.substring(2):n; if(!db.includes(f)) { db.push(f); countAdded++; } }); saveNumbers(db); document.getElementById('inputNumbers').value = ''; renderNumbers(); showToast(`${countAdded} Nomor baru berhasil disimpan!`, 'success'); });
         document.getElementById('btnSelectUnused').addEventListener('click', () => { const used = new Set(getMyLogs().map(l => l.nomor)); const cbs = document.querySelectorAll('.num-checkbox'); const unusedCbs = Array.from(cbs).filter(c => !used.has(c.value)); const allChecked = unusedCbs.every(c => c.checked); unusedCbs.forEach(c => c.checked = !allChecked); });
         document.getElementById('btnSelectUsed').addEventListener('click', () => { const used = new Set(getMyLogs().map(l => l.nomor)); const cbs = document.querySelectorAll('.num-checkbox'); const usedCbs = Array.from(cbs).filter(c => used.has(c.value)); const allChecked = usedCbs.every(c => c.checked); usedCbs.forEach(c => c.checked = !allChecked); });
-        document.getElementById('btnHapusTerpilih').addEventListener('click', () => { const checked = Array.from(document.querySelectorAll('.num-checkbox:checked')).map(c => c.value); if(checked.length) { saveNumbers(getNumbers().filter(n => !checked.includes(n))); renderNumbers(); } });
+        document.getElementById('btnHapusTerpilih').addEventListener('click', () => { const checked = Array.from(document.querySelectorAll('.num-checkbox:checked')).map(c => c.value); if(!checked.length) return showToast('Pilih nomor yang mau dihapus!', 'warning'); saveNumbers(getNumbers().filter(n => !checked.includes(n))); renderNumbers(); showToast(`${checked.length} Nomor berhasil dihapus.`, 'success'); });
 
         async function prosesCheckout(formatOverride) {
-            const checked = document.querySelectorAll('.num-checkbox:checked'); if (!checked.length) return alert('Pilih nomor!');
+            const checked = document.querySelectorAll('.num-checkbox:checked'); if (!checked.length) return showToast('Pilih minimal satu nomor WA di daftar!', 'warning');
             const btn1 = document.getElementById('btnGas'); const btn2 = document.getElementById('btnPin'); btn1.innerHTML = 'MENGIRIM...'; btn2.innerHTML = '...'; btn1.disabled = true; btn2.disabled = true; btn1.classList.add('opacity-50'); btn2.classList.add('opacity-50');
             const nums = Array.from(checked).map(c => c.value); const kode = document.getElementById('kodeToko').value || '-'; const plu = document.getElementById('pluToko').value || '-'; const formatDipakai = formatOverride ? formatOverride : document.getElementById('formatMetode').value;
             currentActiveBatch = nums.map(n => ({ nomor: n, kodeToko: kode, pluToko: plu, status: 'LOADING' })); switchTab('transaksi'); renderActiveBatch(); document.querySelectorAll('.num-checkbox').forEach(c => c.checked = false);
             try {
                 const res = await fetch('/api/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: currentUser, format: formatDipakai, kodeToko: kode, plu, numbers: nums }) });
-                const data = await res.json(); if (data.success) { let logs = getMyLogs(); data.data.forEach((item, i) => { if(currentActiveBatch[i]) { currentActiveBatch[i].status = 'SUCCESS'; currentActiveBatch[i].result = item; logs.push({ nomor: currentActiveBatch[i].nomor, kodeToko: kode, timestamp: Date.now(), result: item }); } }); saveMyLogs(logs); renderNumbers(); renderLogs(); document.getElementById('soundSuccess').play().catch(()=>{}); } else alert("Sistem Menolak: " + data.message);
-            } catch (err) { currentActiveBatch.forEach(i => i.status = 'ERROR'); }
+                const data = await res.json(); 
+                if (data.success) { let logs = getMyLogs(); data.data.forEach((item, i) => { if(currentActiveBatch[i]) { currentActiveBatch[i].status = 'SUCCESS'; currentActiveBatch[i].result = item; logs.push({ nomor: currentActiveBatch[i].nomor, kodeToko: kode, timestamp: Date.now(), result: item }); } }); saveMyLogs(logs); renderNumbers(); renderLogs(); document.getElementById('soundSuccess').play().catch(()=>{}); showToast(`Tugas berhasil dieksekusi!`, 'success');
+                } else { showToast("Ditolak: " + data.message, 'error'); }
+            } catch (err) { currentActiveBatch.forEach(i => i.status = 'ERROR'); showToast('Gagal menghubungi bot WhatsApp!', 'error'); }
             btn1.innerHTML = 'GAS KAN!'; btn2.innerHTML = '<span class="text-lg mb-1">🔑</span> AMBIL PIN'; btn1.disabled = false; btn2.disabled = false; btn1.classList.remove('opacity-50'); btn2.classList.remove('opacity-50'); renderActiveBatch();
         }
         document.getElementById('btnGas').addEventListener('click', () => prosesCheckout(null)); document.getElementById('btnPin').addEventListener('click', () => prosesCheckout('GAS.PIN'));
 
-        function renderActiveBatch() { const body = document.getElementById('activeTableBody'); body.innerHTML = currentActiveBatch.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Tidak ada task berjalan.</td></tr>'; let isProc = false; currentActiveBatch.forEach((item, i) => { let ui = item.status === 'LOADING' ? (isProc=true, '<span class="text-amber-500 animate-spin inline-block font-bold">⏳</span>') : item.status === 'SUCCESS' ? `<button onclick='showModalLog(${JSON.stringify(item.result).replace(/'/g, "&#39;")})' class="bg-blue-500 hover:bg-blue-600 px-3 rounded text-[10px] text-white py-1.5 font-bold shadow transition">CEK</button>` : '❌'; body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 px-2 text-[10px] text-slate-400 font-bold">${i+1}</td><td class="py-3 px-2 font-mono font-bold text-[11px]">${item.nomor}</td><td class="py-3 px-2 text-[10px] font-black">${item.kodeToko}</td><td class="py-3 px-2 text-center">${ui}</td></tr>`; }); document.getElementById('pingIndicator').style.display = isProc ? 'block' : 'none'; }
-        function renderLogs() { const body = document.getElementById('logTableBody'); const logs = [...getMyLogs()].sort((a,b) => b.timestamp - a.timestamp); body.innerHTML = logs.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Log kosong.</td></tr>'; logs.forEach((log, i) => { body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 text-[10px] text-slate-400 font-bold">${logs.length-i}</td><td class="py-3 font-mono text-[10px] font-bold">${log.nomor}</td><td class="py-3 text-[10px] font-black">${log.kodeToko}</td><td class="py-3 text-right"><button onclick='showModalLog(${JSON.stringify(log.result).replace(/'/g, "&#39;")})' class="bg-slate-800 dark:bg-slate-700 hover:bg-black px-3 py-1.5 rounded text-[10px] text-white font-bold transition">Buka</button></td></tr>`; }); }
-        window.bersihkanLogSaya = function() { if(confirm('Hapus histori log Anda secara permanen?')) { saveMyLogs([]); renderLogs(); renderNumbers(); } }
+        function renderActiveBatch() { const body = document.getElementById('activeTableBody'); body.innerHTML = currentActiveBatch.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Tidak ada task berjalan.</td></tr>'; let isProc = false; currentActiveBatch.forEach((item, i) => { let ui = item.status === 'LOADING' ? (isProc=true, '<span class="text-amber-500 animate-spin inline-block font-bold">⏳</span>') : item.status === 'SUCCESS' ? `<button onclick='showModalLog(${JSON.stringify(item.result).replace(/'/g, "'")})' class="bg-blue-500 hover:bg-blue-600 px-3 rounded text-[10px] text-white py-1.5 font-bold shadow transition">CEK</button>` : '❌'; body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 px-2 text-[10px] text-slate-400 font-bold">${i+1}</td><td class="py-3 px-2 font-mono font-bold text-[11px]">${item.nomor}</td><td class="py-3 px-2 text-[10px] font-black">${item.kodeToko}</td><td class="py-3 px-2 text-center">${ui}</td></tr>`; }); document.getElementById('pingIndicator').style.display = isProc ? 'block' : 'none'; }
+        function renderLogs() { const body = document.getElementById('logTableBody'); const logs = [...getMyLogs()].sort((a,b) => b.timestamp - a.timestamp); body.innerHTML = logs.length ? '' : '<tr><td colspan="4" class="text-center py-6 text-slate-400 font-bold">Log kosong.</td></tr>'; logs.forEach((log, i) => { body.innerHTML += `<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50"><td class="py-3 text-[10px] text-slate-400 font-bold">${logs.length-i}</td><td class="py-3 font-mono text-[10px] font-bold">${log.nomor}</td><td class="py-3 text-[10px] font-black">${log.kodeToko}</td><td class="py-3 text-right"><button onclick='showModalLog(${JSON.stringify(log.result).replace(/'/g, "'")})' class="bg-slate-800 dark:bg-slate-700 hover:bg-black px-3 py-1.5 rounded text-[10px] text-white font-bold transition">Buka</button></td></tr>`; }); }
+        
+        window.bersihkanLogSaya = function() { if(confirm('Hapus histori log Anda secara permanen?')) { saveMyLogs([]); renderLogs(); renderNumbers(); showToast('Riwayat berhasil dibersihkan.', 'success'); } }
         window.showModalLog = function(obj) { let h = obj.barcodeUrl ? `<div class="bg-white p-3 rounded-xl mb-4 shadow-inner border border-slate-200"><img src="${obj.barcodeUrl}" class="w-full mix-blend-multiply"></div>` : ''; h += `<pre class="text-[10px] whitespace-pre-wrap bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-xl font-mono text-slate-700 dark:text-slate-300 shadow-inner">${obj.text||''}</pre>`; document.getElementById('modalContent').innerHTML = h; document.getElementById('modalLihat').classList.remove('hidden'); }
 
         async function doSearchToko() {
-            const q = document.getElementById('inputSearchToko').value.trim().toLowerCase();
-            const box = document.getElementById('resultToko');
+            const q = document.getElementById('inputSearchToko').value.trim().toLowerCase(); const box = document.getElementById('resultToko');
             if(!q || q.length < 3) { box.innerHTML = '<p class="text-center text-sm text-amber-500 py-4 font-bold bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200">⚠️ Masukkan minimal 3 karakter</p>'; return; }
-            box.innerHTML = '<div class="flex justify-center py-8"><span class="animate-spin text-3xl text-emerald-500">⚙️</span></div>';
-            
-            catatAktivitas('Pencarian Toko', q); 
-
+            box.innerHTML = '<div class="flex justify-center py-8"><span class="animate-spin text-3xl text-emerald-500">⚙️</span></div>'; catatAktivitas('Pencarian Toko', q); 
             try {
-                if(!dbTokoLokal) { const res = await fetch('https://raw.githubusercontent.com/Marsudi505/toko-idm/main/toko.json'); dbTokoLokal = await res.json(); }
-                const results = dbTokoLokal.filter(t => (t.storeCode && t.storeCode.toLowerCase().includes(q)) || (t.storeName && t.storeName.toLowerCase().includes(q)) || (t.address && t.address.toLowerCase().includes(q))).slice(0, 15);
-                
-                if(results.length === 0) { box.innerHTML = '<p class="text-center text-sm text-slate-500 py-6 font-bold">Data toko tidak ditemukan di sistem.</p>'; return; }
+                const res = await fetch(`/api/toko/search?q=${encodeURIComponent(q)}`); const dataServer = await res.json(); const results = dataServer.data;
+                if(!results || results.length === 0) { box.innerHTML = '<p class="text-center text-sm text-slate-500 py-6 font-bold">Data toko tidak ditemukan di sistem.</p>'; return; }
                 box.innerHTML = '';
-                
                 results.forEach(t => {
-                    const isBuka = t.operational === true;
-                    const isCoverage = t.inCoverage === true;
-                    box.innerHTML += `
-                    <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 hover:border-emerald-500 hover:shadow-emerald-500/20 transition-all group relative overflow-hidden">
-                        <div class="absolute right-0 top-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-[100px] z-0"></div>
-                        <div class="flex justify-between items-start mb-3 relative z-10">
-                            <div>
-                                <h4 class="font-black text-slate-800 dark:text-white text-[15px] leading-tight group-hover:text-emerald-600 transition">${t.storeName}</h4>
-                                <div class="flex space-x-2 mt-2">
-                                    <span class="text-[9px] font-mono font-black bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">ID: ${t.storeCode || '-'}</span>
-                                    <span class="text-[9px] font-mono font-black bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">DC: ${t.dcCode || '-'}</span>
-                                </div>
-                            </div>
-                            <span class="text-[9px] ${isBuka ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-red-500 text-white shadow-red-500/40'} font-black px-2.5 py-1.5 rounded-full shadow-md tracking-wider">
-                                ${isBuka ? 'ONLINE' : 'OFFLINE'}
-                            </span>
-                        </div>
-                        <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-4 leading-relaxed relative z-10">${t.address}</p>
-                        <div class="grid grid-cols-2 gap-2 mb-4 relative z-10">
-                            <div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tipe Toko</span><span class="block text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">${t.storeType || 'Reguler'}</span></div>
-                            <div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Layanan Antar</span><span class="block text-[10px] font-bold ${isCoverage ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${isCoverage ? 'Tersedia (Coverage)' : 'Tidak Tersedia'}</span></div>
-                        </div>
-                        <div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-100 dark:border-slate-700/50 relative z-10">
-                            <div class="flex flex-col"><div class="text-[10px] font-bold text-slate-500 mb-0.5">🕒 <span class="text-slate-800 dark:text-slate-200">${t.openingHour || '?'} - ${t.closingHour || '?'}</span></div>${(t.latitude && t.longitude) ? `<span class="text-[8px] font-mono text-slate-400">📍 ${t.latitude}, ${t.longitude}</span>` : ''}</div>
-                            ${t.googleMaps ? `<a href="${t.googleMaps}" target="_blank" class="bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 text-[10px] font-black py-1.5 px-4 rounded-full shadow-sm transition duration-300">BUKA MAPS</a>` : ''}
-                        </div>
-                    </div>`;
+                    const isBuka = t.operational === true; const isCoverage = t.inCoverage === true;
+                    box.innerHTML += `<div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 hover:border-emerald-500 hover:shadow-emerald-500/20 transition-all group relative overflow-hidden"><div class="absolute right-0 top-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-[100px] z-0"></div><div class="flex justify-between items-start mb-3 relative z-10"><div><h4 class="font-black text-slate-800 dark:text-white text-[15px] leading-tight group-hover:text-emerald-600 transition">${t.storeName}</h4><div class="flex space-x-2 mt-2"><span class="text-[9px] font-mono font-black bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">ID: ${t.storeCode || '-'}</span><span class="text-[9px] font-mono font-black bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">DC: ${t.dcCode || '-'}</span></div></div><span class="text-[9px] ${isBuka ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-red-500 text-white shadow-red-500/40'} font-black px-2.5 py-1.5 rounded-full shadow-md tracking-wider">${isBuka ? 'ONLINE' : 'OFFLINE'}</span></div><p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-4 leading-relaxed relative z-10">${t.address}</p><div class="grid grid-cols-2 gap-2 mb-4 relative z-10"><div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tipe Toko</span><span class="block text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">${t.storeType || 'Reguler'}</span></div><div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Layanan Antar</span><span class="block text-[10px] font-bold ${isCoverage ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${isCoverage ? 'Tersedia (Coverage)' : 'Tidak Tersedia'}</span></div></div><div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-100 dark:border-slate-700/50 relative z-10"><div class="flex flex-col"><div class="text-[10px] font-bold text-slate-500 mb-0.5">🕒 <span class="text-slate-800 dark:text-slate-200">${t.openingHour || '?'} - ${t.closingHour || '?'}</span></div>${(t.latitude && t.longitude) ? `<span class="text-[8px] font-mono text-slate-400">📍 ${t.latitude}, ${t.longitude}</span>` : ''}</div>${t.googleMaps ? `<a href="${t.googleMaps}" target="_blank" class="bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 text-[10px] font-black py-1.5 px-4 rounded-full shadow-sm transition duration-300">BUKA MAPS</a>` : ''}</div></div>`;
                 });
-            } catch(e) { box.innerHTML = '<p class="text-center text-sm text-red-500 py-6 font-bold">Gagal sinkronisasi dengan GitHub.</p>'; }
+            } catch(e) { box.innerHTML = '<p class="text-center text-sm text-red-500 py-6 font-bold">Gagal terhubung ke server toko.</p>'; }
         }
 
         async function cariTokoTerdekat() {
             const box = document.getElementById('resultToko');
-            if (!navigator.geolocation) {
-                box.innerHTML = '<p class="text-center text-sm text-red-500 py-4 font-bold bg-red-50 rounded-xl">GPS tidak didukung di browser Anda.</p>';
-                return;
-            }
-
+            if (!navigator.geolocation) { box.innerHTML = '<p class="text-center text-sm text-red-500 py-4 font-bold bg-red-50 rounded-xl">GPS tidak didukung.</p>'; return showToast("Browser tidak mendukung GPS.", "error"); }
             box.innerHTML = '<div class="flex flex-col items-center py-8"><span class="animate-bounce text-3xl mb-2">📍</span><p class="text-xs font-bold text-emerald-600 animate-pulse">Melacak lokasi Anda...</p></div>';
-
+            
             navigator.geolocation.getCurrentPosition(async (position) => {
-                const userLat = position.coords.latitude;
-                const userLon = position.coords.longitude;
+                const userLat = position.coords.latitude; const userLon = position.coords.longitude; 
+                catatAktivitas('Cari Toko Terdekat', `Titik GPS: ${userLat}, ${userLon}`); 
+                showToast("Titik GPS ditemukan!", "success");
                 
-                catatAktivitas('Cari Toko Terdekat', `Titik GPS User: ${userLat.toFixed(3)}, ${userLon.toFixed(3)}`);
-
                 try {
-                    if(!dbTokoLokal) { const res = await fetch('https://raw.githubusercontent.com/Marsudi505/toko-idm/main/toko.json'); dbTokoLokal = await res.json(); }
-                    
-                    let storesWithDistance = [];
-                    dbTokoLokal.forEach(t => {
-                        if(t.latitude && t.longitude) {
-                            const jarak = hitungJarak(userLat, userLon, parseFloat(t.latitude), parseFloat(t.longitude));
-                            if(jarak <= 10) { 
-                                storesWithDistance.push({ ...t, jarakAsli: jarak });
-                            }
-                        }
-                    });
-
-                    storesWithDistance.sort((a, b) => a.jarakAsli - b.jarakAsli);
-                    const results = storesWithDistance.slice(0, 15); 
-
-                    if(results.length === 0) { 
-                        box.innerHTML = '<p class="text-center text-sm text-amber-500 py-6 font-bold bg-amber-50 rounded-xl">Tidak ada toko dalam radius 10 KM.</p>'; 
-                        return; 
-                    }
-                    
+                    const res = await fetch(`/api/toko/nearby?lat=${userLat}&lon=${userLon}`); const dataServer = await res.json(); const results = dataServer.data;
+                    if(!results || results.length === 0) { box.innerHTML = '<p class="text-center text-sm text-amber-500 py-6 font-bold bg-amber-50 rounded-xl">Tidak ada toko dalam radius 10 KM.</p>'; return; }
                     box.innerHTML = `<div class="mb-3 text-center"><span class="text-[10px] font-black bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full shadow-sm border border-emerald-200">DITEMUKAN ${results.length} TOKO TERDEKAT (MAX 10 KM)</span></div>`;
-                    
                     results.forEach(t => {
-                        const isBuka = t.operational === true;
-                        const isCoverage = t.inCoverage === true;
-                        const jarakStr = t.jarakAsli.toFixed(1) + ' KM';
-                        
-                        box.innerHTML += `
-                        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 hover:border-emerald-500 hover:shadow-emerald-500/20 transition-all group relative overflow-hidden">
-                            <div class="absolute right-0 top-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-[100px] z-0"></div>
-                            <div class="flex justify-between items-start mb-3 relative z-10">
-                                <div>
-                                    <h4 class="font-black text-slate-800 dark:text-white text-[15px] leading-tight group-hover:text-emerald-600 transition">${t.storeName}</h4>
-                                    <div class="flex space-x-2 mt-2 items-center">
-                                        <span class="text-[9px] font-mono font-black bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">ID: ${t.storeCode || '-'}</span>
-                                        <span class="text-[9px] font-mono font-black bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">DC: ${t.dcCode || '-'}</span>
-                                        <span class="text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">🛣️ ${jarakStr}</span>
-                                    </div>
-                                </div>
-                                <span class="text-[9px] ${isBuka ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-red-500 text-white shadow-red-500/40'} font-black px-2.5 py-1.5 rounded-full shadow-md tracking-wider">
-                                    ${isBuka ? 'ONLINE' : 'OFFLINE'}
-                                </span>
-                            </div>
-                            <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-4 leading-relaxed relative z-10">${t.address}</p>
-                            <div class="grid grid-cols-2 gap-2 mb-4 relative z-10">
-                                <div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tipe Toko</span><span class="block text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">${t.storeType || 'Reguler'}</span></div>
-                                <div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Layanan Antar</span><span class="block text-[10px] font-bold ${isCoverage ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${isCoverage ? 'Tersedia (Coverage)' : 'Tidak Tersedia'}</span></div>
-                            </div>
-                            <div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-100 dark:border-slate-700/50 relative z-10">
-                                <div class="flex flex-col"><div class="text-[10px] font-bold text-slate-500 mb-0.5">🕒 <span class="text-slate-800 dark:text-slate-200">${t.openingHour || '?'} - ${t.closingHour || '?'}</span></div>${(t.latitude && t.longitude) ? `<span class="text-[8px] font-mono text-slate-400">📍 ${t.latitude}, ${t.longitude}</span>` : ''}</div>
-                                ${t.googleMaps ? `<a href="${t.googleMaps}" target="_blank" class="bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 text-[10px] font-black py-1.5 px-4 rounded-full shadow-sm transition duration-300">BUKA MAPS</a>` : ''}
-                            </div>
-                        </div>`;
+                        const isBuka = t.operational === true; const isCoverage = t.inCoverage === true; const jarakStr = t.jarakAsli.toFixed(1) + ' KM';
+                        box.innerHTML += `<div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 hover:border-emerald-500 hover:shadow-emerald-500/20 transition-all group relative overflow-hidden"><div class="absolute right-0 top-0 w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-bl-[100px] z-0"></div><div class="flex justify-between items-start mb-3 relative z-10"><div><h4 class="font-black text-slate-800 dark:text-white text-[15px] leading-tight group-hover:text-emerald-600 transition">${t.storeName}</h4><div class="flex space-x-2 mt-2 items-center"><span class="text-[9px] font-mono font-black bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">ID: ${t.storeCode || '-'}</span><span class="text-[9px] font-mono font-black bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">DC: ${t.dcCode || '-'}</span><span class="text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">🛣️ ${jarakStr}</span></div></div><span class="text-[9px] ${isBuka ? 'bg-emerald-500 text-white shadow-emerald-500/40' : 'bg-red-500 text-white shadow-red-500/40'} font-black px-2.5 py-1.5 rounded-full shadow-md tracking-wider">${isBuka ? 'ONLINE' : 'OFFLINE'}</span></div><p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-4 leading-relaxed relative z-10">${t.address}</p><div class="grid grid-cols-2 gap-2 mb-4 relative z-10"><div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tipe Toko</span><span class="block text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">${t.storeType || 'Reguler'}</span></div><div class="bg-slate-50 dark:bg-[#0f172a] p-2 rounded-lg border border-slate-100 dark:border-slate-700"><span class="block text-[8px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Layanan Antar</span><span class="block text-[10px] font-bold ${isCoverage ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}">${isCoverage ? 'Tersedia (Coverage)' : 'Tidak Tersedia'}</span></div></div><div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-100 dark:border-slate-700/50 relative z-10"><div class="flex flex-col"><div class="text-[10px] font-bold text-slate-500 mb-0.5">🕒 <span class="text-slate-800 dark:text-slate-200">${t.openingHour || '?'} - ${t.closingHour || '?'}</span></div>${(t.latitude && t.longitude) ? `<span class="text-[8px] font-mono text-slate-400">📍 ${t.latitude}, ${t.longitude}</span>` : ''}</div>${t.googleMaps ? `<a href="${t.googleMaps}" target="_blank" class="bg-white text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 text-[10px] font-black py-1.5 px-4 rounded-full shadow-sm transition duration-300">BUKA MAPS</a>` : ''}</div></div>`;
                     });
-                } catch(e) { 
-                    box.innerHTML = '<p class="text-center text-sm text-red-500 py-6 font-bold">Gagal menghitung data jarak toko.</p>'; 
-                }
-            }, (error) => {
-                let msg = "Gagal mendapatkan lokasi GPS Anda.";
-                if(error.code === 1) msg = "Izin akses GPS / Lokasi ditolak oleh Browser Anda.";
-                box.innerHTML = `<p class="text-center text-sm text-red-500 py-4 font-bold bg-red-50 rounded-xl">${msg}</p>`;
-            }, { enableHighAccuracy: true });
+                } catch(e) { box.innerHTML = '<p class="text-center text-sm text-red-500 py-6 font-bold">Gagal menghitung data jarak.</p>'; }
+            }, (error) => { box.innerHTML = `<p class="text-center text-sm text-red-500 py-4 font-bold bg-red-50 rounded-xl">Izin akses GPS ditolak.</p>`; showToast("Lacak GPS ditolak atau gagal.", "error"); }, { enableHighAccuracy: true });
         }
 
         let html5QrcodeScanner = null; let isCameraOpen = false;
         function toggleScanner() {
             const camArea = document.getElementById('cameraArea');
             if(isCameraOpen) { if(html5QrcodeScanner) { html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }); } camArea.classList.add('hidden'); isCameraOpen = false; } 
-            else { camArea.classList.remove('hidden'); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 100 } }, (decodedText) => { document.getElementById('inputSearchProd').value = decodedText; toggleScanner(); doSearchProd(); }, (err) => { }).catch(err => { alert("Kamera ditolak browser."); camArea.classList.add('hidden'); }); isCameraOpen = true; }
+            else { camArea.classList.remove('hidden'); html5QrcodeScanner = new Html5Qrcode("reader"); html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 250, height: 100 } }, (decodedText) => { document.getElementById('inputSearchProd').value = decodedText; toggleScanner(); doSearchProd(); }, (err) => { }).catch(err => { showToast("Izin kamera ditolak.", "error"); camArea.classList.add('hidden'); }); isCameraOpen = true; }
         }
 
         async function doSearchProd() {
-            const q = document.getElementById('inputSearchProd').value.trim().toLowerCase();
-            const grid = document.getElementById('resultGrid');
+            const q = document.getElementById('inputSearchProd').value.trim().toLowerCase(); const grid = document.getElementById('resultGrid');
             if(!q) return;
-            
-            grid.innerHTML = '<div class="col-span-2 flex flex-col items-center justify-center py-10"><div class="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3"></div><p class="text-xs font-bold text-purple-600 animate-pulse">Mencari di Database...</p></div>';
-            
+            grid.innerHTML = '<div class="col-span-2 flex flex-col items-center justify-center py-10"><div class="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-3"></div><p class="text-xs font-bold text-purple-600 animate-pulse">Mencari di Server Tertutup...</p></div>';
             catatAktivitas('Pencarian Barang', q);
-
             try {
-                if(!dbBarcodeLokal) {
-                    const res = await fetch('https://raw.githubusercontent.com/Marsudi505/Barcodes/main/barcodesheet.json');
-                    dbBarcodeLokal = await res.json();
-                }
-                
-                const results = dbBarcodeLokal.filter(item => 
-                    (item.plu && String(item.plu).toLowerCase().includes(q)) ||
-                    (item.barcode && String(item.barcode).toLowerCase().includes(q)) ||
-                    (item.nama && String(item.nama).toLowerCase().includes(q))
-                ).slice(0, 20); 
-                
-                if(results.length === 0) { 
-                    grid.innerHTML = '<div class="col-span-2 text-center py-10 bg-slate-100 dark:bg-slate-800 rounded-2xl"><span class="text-3xl mb-2 block">📭</span><p class="text-sm font-bold text-slate-500">Item tidak ada di database inti.</p></div>'; 
-                    return; 
-                }
-                
+                const res = await fetch(`/api/products/search?q=${encodeURIComponent(q)}`); const dataServer = await res.json(); const results = dataServer.data;
+                if(!results || results.length === 0) { grid.innerHTML = '<div class="col-span-2 text-center py-10 bg-slate-100 dark:bg-slate-800 rounded-2xl"><span class="text-3xl mb-2 block">📭</span><p class="text-sm font-bold text-slate-500">Item tidak ada di database inti.</p></div>'; return; }
                 grid.innerHTML = '';
                 results.forEach(item => {
-                    const pluStr = String(item.plu).trim();
-                    const imgUrl = `https://raw.githubusercontent.com/Marsudi505/katalog-klik/main/${pluStr}.jpg`;
-                    const namaAman = item.nama ? item.nama : "Nama Item Unknown";
-                    
-                    grid.innerHTML += `
-                    <div onclick='showDetailProduct(${JSON.stringify(item).replace(/'/g, "&#39;")})' class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 cursor-pointer hover:border-purple-500 hover:shadow-purple-500/20 transition-all transform hover:-translate-y-1 overflow-hidden relative group">
-                        <div class="h-28 bg-slate-50 dark:bg-slate-800 flex justify-center items-center p-2 border-b border-slate-100 dark:border-slate-700">
-                            <img src="${imgUrl}" class="max-h-full max-w-full object-contain filter drop-shadow group-hover:scale-110 transition duration-300" onerror="this.src='https://via.placeholder.com/150?text=No+Img'">
-                        </div>
-                        <div class="p-3 flex flex-col h-24">
-                            <h4 class="text-[11px] font-black leading-tight text-slate-700 dark:text-slate-200 mb-1 line-clamp-3">${namaAman}</h4>
-                            <div class="mt-auto flex justify-between items-center">
-                                <p class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">PLU: ${pluStr}</p>
-                                <span class="text-[10px] text-purple-500 font-black">Cek Rak →</span>
-                            </div>
-                        </div>
-                    </div>`;
+                    const pluStr = String(item.plu).trim(); const imgUrl = `https://raw.githubusercontent.com/Marsudi505/katalog-klik/main/${pluStr}.jpg`; const namaAman = item.nama ? item.nama : "Nama Item Unknown";
+                    grid.innerHTML += `<div onclick='showDetailProduct(${JSON.stringify(item).replace(/'/g, "'")})' class="bg-white dark:bg-[#1e293b] rounded-2xl shadow-lg border border-slate-100 dark:border-slate-700 cursor-pointer hover:border-purple-500 hover:shadow-purple-500/20 transition-all transform hover:-translate-y-1 overflow-hidden relative group"><div class="h-28 bg-slate-50 dark:bg-slate-800 flex justify-center items-center p-2 border-b border-slate-100 dark:border-slate-700"><img src="${imgUrl}" class="max-h-full max-w-full object-contain filter drop-shadow group-hover:scale-110 transition duration-300" onerror="this.src='https://via.placeholder.com/150?text=No+Img'"></div><div class="p-3 flex flex-col h-24"><h4 class="text-[11px] font-black leading-tight text-slate-700 dark:text-slate-200 mb-1 line-clamp-3">${namaAman}</h4><div class="mt-auto flex justify-between items-center"><p class="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">PLU: ${pluStr}</p><span class="text-[10px] text-purple-500 font-black">Cek Rak →</span></div></div></div>`;
                 });
-            } catch (e) { grid.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4 font-bold bg-red-50 rounded-xl">Gagal sinkronisasi data katalog.</p>'; }
+            } catch (e) { grid.innerHTML = '<p class="col-span-2 text-center text-red-500 text-sm py-4 font-bold bg-red-50 rounded-xl">Gagal menyambung ke server.</p>'; }
         }
 
         window.showDetailProduct = function(item) {
             const pluStr = String(item.plu).trim();
             document.getElementById('modProdName').innerText = item.nama ? item.nama : "Nama Item Unknown";
             document.getElementById('modProdPlu').innerText = pluStr;
-            
             document.getElementById('modProdImg').src = `https://raw.githubusercontent.com/Marsudi505/katalog-klik/main/${pluStr}.jpg`;
+            if(item.barcode && item.barcode !== "") { document.getElementById('modProdBarcodeTxt').innerText = item.barcode; document.getElementById('modProdBarcodeImg').src = `https://barcode.tec-it.com/barcode.ashx?data=${item.barcode}&code=Code128&translate-esc=on`; document.getElementById('modProdBarcodeImg').style.display = 'block'; } 
+            else { document.getElementById('modProdBarcodeTxt').innerText = "-"; document.getElementById('modProdBarcodeImg').style.display = 'none'; }
             
-            if(item.barcode && item.barcode !== "") {
-                document.getElementById('modProdBarcodeTxt').innerText = item.barcode;
-                document.getElementById('modProdBarcodeImg').src = `https://barcode.tec-it.com/barcode.ashx?data=${item.barcode}&code=Code128&translate-esc=on`;
-                document.getElementById('modProdBarcodeImg').style.display = 'block';
-            } else {
-                document.getElementById('modProdBarcodeTxt').innerText = "-";
-                document.getElementById('modProdBarcodeImg').style.display = 'none';
-            }
-            
-            let dRak = null;
-            if (dbRakLokal) {
-                const pluKunci = Object.keys(dbRakLokal).find(k => k === pluStr || parseInt(k, 10) === parseInt(pluStr, 10));
-                if (pluKunci) {
-                    dRak = dbRakLokal[pluKunci];
-                }
-            }
-
+            let dRak = item.rakData || null;
             document.getElementById('txtRak').innerText = dRak && dRak.rak && dRak.rak !== '-' ? dRak.rak : 'KOSONG';
             document.getElementById('txtShelving').innerText = dRak && dRak.shelving ? dRak.shelving : '-';
             document.getElementById('txtUrutan').innerText = dRak && dRak.urutan ? dRak.urutan : '-';
             document.getElementById('txtRetur').innerText = (dRak && dRak.retur && dRak.retur !== '-') ? dRak.retur : 'Aman (Tidak Ada Info)';
 
-            document.getElementById('areaSearch').classList.add('hidden');
-            document.getElementById('areaDetail').classList.remove('hidden');
-            
-            window.scrollTo(0, 0);
-            
-            catatAktivitas('Membuka Detail Rak Produk', pluStr);
+            document.getElementById('areaSearch').classList.add('hidden'); document.getElementById('areaDetail').classList.remove('hidden'); window.scrollTo(0, 0); catatAktivitas('Membuka Detail Rak Produk', pluStr);
         }
 
-        window.closeDetail = function() {
-            document.getElementById('areaDetail').classList.add('hidden');
-            document.getElementById('areaSearch').classList.remove('hidden');
-        }
+        window.closeDetail = function() { document.getElementById('areaDetail').classList.add('hidden'); document.getElementById('areaSearch').classList.remove('hidden'); }
         
         window.switchAdminTab = function(tab) {
-            const btnTx = document.getElementById('btnAdminTabTx');
-            const btnAct = document.getElementById('btnAdminTabAct');
-            const viewTx = document.getElementById('adminViewTx');
-            const viewAct = document.getElementById('adminViewAct');
-            
-            const activeClass = "bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm";
-            const inactiveClass = "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700";
-            
-            if(tab === 'transaksi') {
-                viewTx.classList.remove('hidden'); viewAct.classList.add('hidden');
-                btnTx.className = activeClass; btnAct.className = inactiveClass;
-            } else {
-                viewAct.classList.remove('hidden'); viewTx.classList.add('hidden');
-                btnAct.className = activeClass; btnTx.className = inactiveClass;
-            }
+            const btnTx = document.getElementById('btnAdminTabTx'); const btnAct = document.getElementById('btnAdminTabAct'); const viewTx = document.getElementById('adminViewTx'); const viewAct = document.getElementById('adminViewAct');
+            const activeClass = "bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm"; const inactiveClass = "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm transition border border-slate-200 dark:border-slate-700";
+            if(tab === 'transaksi') { viewTx.classList.remove('hidden'); viewAct.classList.add('hidden'); btnTx.className = activeClass; btnAct.className = inactiveClass; } 
+            else { viewAct.classList.remove('hidden'); viewTx.classList.add('hidden'); btnAct.className = activeClass; btnTx.className = inactiveClass; }
+        }
+
+        function renderMenuSwitches() {
+            const container = document.getElementById('adminMenuToggles');
+            const menusDef = [ { id: 'dashboard', name: '📦 Menu Checkout' }, { id: 'search', name: '🔍 Menu Cari Barang' }, { id: 'toko', name: '🏪 Menu Cari Toko' }, { id: 'generator', name: '🏁 Menu QR/Barcode' } ];
+            let html = '';
+            menusDef.forEach(m => {
+                let isChecked = globalMenus[m.id] !== false ? 'checked' : '';
+                html += `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-inner"><span class="text-xs font-bold text-slate-700 dark:text-slate-300">${m.name}</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" class="sr-only peer" ${isChecked} onchange="toggleGlobalMenu('${m.id}', this.checked)"><div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 shadow-sm"></div></label></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.toggleGlobalMenu = async function(menuId, isEnabled) {
+            globalMenus[menuId] = isEnabled; 
+            try {
+                await fetch('/api/admin/settings', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ menu: menuId, state: isEnabled }) });
+                showToast(`Menu ${menuId} telah di-${isEnabled ? 'ON' : 'OFF'}-kan.`, isEnabled ? 'success' : 'warning');
+            } catch(e) { showToast("Gagal update setting menu", "error"); }
+        }
+
+        window.toggleUserRole = async function(usernameTarget, isAdmin) {
+            const newRole = isAdmin ? 'admin' : 'user';
+            try {
+                await fetch('/api/admin/users/role', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ username: usernameTarget, role: newRole }) });
+                showToast(`${usernameTarget.toUpperCase()} sekarang adalah ${newRole.toUpperCase()}.`, "success"); loadAdminData(); 
+            } catch(e) { showToast("Gagal merubah akses user", "error"); }
         }
 
         async function loadAdminData() { 
             try { 
-                const res = await fetch('/api/admin/data'); 
-                const data = await res.json(); 
-                
-                const uBody = document.getElementById('adminUserTable'); 
-                uBody.innerHTML = ''; 
-                if(data.users) {
+                const res = await fetch('/api/admin/data'); const data = await res.json(); 
+                if(data.settings && data.settings.menus) { globalMenus = data.settings.menus; renderMenuSwitches(); }
+
+                const uBody = document.getElementById('adminUserTable'); uBody.innerHTML = ''; 
+                if(data.users) { 
                     data.users.forEach((u) => { 
-                        uBody.innerHTML += `<tr><td class="py-2 font-bold">${u.username}</td><td class="text-slate-400 font-mono">${u.password}</td><td>${u.role!=='admin'?`<button onclick="adminDelUser('${u.username}')" class="text-red-500 font-bold px-1">X</button>`:''}</td></tr>`; 
+                        let roleBadge = u.role === 'owner' ? '<span class="text-amber-500">👑 OWNER</span>' : u.role === 'admin' ? '<span class="text-blue-500">🛡️ ADMIN</span>' : '<span class="text-slate-400">👤 USER</span>';
+                        let actionHtml = '';
+                        if(currentRole === 'owner' && u.username !== 'sudi') {
+                            let isCheckedAdmin = u.role === 'admin' ? 'checked' : '';
+                            actionHtml = `<div class="flex items-center space-x-2"><label class="relative inline-flex items-center cursor-pointer" title="Jadikan Admin"><input type="checkbox" class="sr-only peer" ${isCheckedAdmin} onchange="toggleUserRole('${u.username}', this.checked)"><div class="w-7 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div></label><button onclick="adminDelUser('${u.username}')" class="text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded text-[10px] font-black hover:bg-red-200 transition">DEL</button></div>`;
+                        } else if (currentRole === 'admin' && u.role === 'user') {
+                            actionHtml = `<button onclick="adminDelUser('${u.username}')" class="text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded text-[10px] font-black hover:bg-red-200 transition">DEL</button>`;
+                        }
+                        uBody.innerHTML += `<tr class="border-b border-slate-100 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition"><td class="py-2.5 font-bold">${u.username.toUpperCase()}</td><td class="text-slate-400 font-mono">${u.password}</td><td class="font-bold text-[9px]">${roleBadge}</td><td>${actionHtml}</td></tr>`; 
                     }); 
                 }
 
-                const logsArray = Array.isArray(data.logs) ? data.logs : [];
-                const actArray = Array.isArray(data.activityLogs) ? data.activityLogs : [];
-
-                const txLogs = [...logsArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 200);
-                const actLogs = [...actArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 1000);
+                const logsArray = Array.isArray(data.logs) ? data.logs : []; const actArray = Array.isArray(data.activityLogs) ? data.activityLogs : [];
+                const txLogs = [...logsArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 200); const actLogs = [...actArray].sort((a,b)=>b.timestamp-a.timestamp).slice(0, 1000);
 
                 const lBody = document.getElementById('adminLogTable');
-                if (lBody) {
-                    lBody.innerHTML = ''; 
-                    txLogs.forEach((l) => { 
-                        const d = new Date(l.timestamp); 
-                        const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; 
-                        lBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-emerald-600">${l.username}</td><td class="font-mono">${l.nomor}</td><td>${l.kodeToko}</td><td><button onclick='showModalLog(${JSON.stringify(l.result).replace(/'/g, "&#39;")})' class="bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded text-white text-[9px] shadow-sm">Cek</button></td></tr>`; 
-                    });
-                }
+                if (lBody) { lBody.innerHTML = ''; txLogs.forEach((l) => { const d = new Date(l.timestamp); const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; lBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-emerald-600">${l.username}</td><td class="font-mono">${l.nomor}</td><td>${l.kodeToko}</td><td><button onclick='showModalLog(${JSON.stringify(l.result).replace(/'/g, "'")})' class="bg-indigo-500 hover:bg-indigo-600 px-1.5 py-0.5 rounded text-white text-[9px] shadow-sm">Cek</button></td></tr>`; }); }
 
                 const aBody = document.getElementById('adminActTable');
-                if(aBody) {
-                    aBody.innerHTML = '';
-                    actLogs.forEach((a) => {
+                if(aBody) { 
+                    aBody.innerHTML = ''; 
+                    actLogs.forEach((a) => { 
                         const d = new Date(a.timestamp); 
                         const wkt = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear().toString().slice(-2)} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`; 
-                        aBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-blue-600">${a.username}</td><td class="text-[9px] font-bold text-slate-700 dark:text-slate-300">${a.action}</td><td class="font-mono text-slate-500 dark:text-slate-400 truncate max-w-[100px]">${a.detail}</td></tr>`;
-                    });
+                        
+                        let detailStr = a.detail || ''; 
+                        let extraBtn = ''; 
+                        
+                        // 🔥 SUNTIKAN TOMBOL BUKA MAPS BERDASARKAN LOG GPS 🔥
+                        if (detailStr.includes('Titik GPS:')) { 
+                            let coords = detailStr.replace('Titik GPS:', '').trim(); 
+                            extraBtn = `<br><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(coords)}" target="_blank" class="inline-block mt-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded text-[9px] font-black hover:bg-blue-200 transition text-center shadow-sm">📍 BUKA MAPS</a>`; 
+                        } 
+
+                        aBody.innerHTML += `<tr><td class="py-2 pl-2 text-[8px] text-slate-500 whitespace-nowrap">${wkt}</td><td class="font-bold text-blue-600">${a.username}</td><td class="text-[9px] font-bold text-slate-700 dark:text-slate-300">${a.action}</td><td class="font-mono text-slate-500 dark:text-slate-400 max-w-[120px] break-words">${detailStr}${extraBtn}</td></tr>`; 
+                    }); 
                 }
 
-                document.getElementById('statTotalTx').innerText = logsArray.length;
-                document.getElementById('statTotalAct').innerText = actArray.length;
-
-                let userCounts = {};
-                logsArray.forEach(l => { if(l.username) userCounts[l.username] = (userCounts[l.username] || 0) + 1; });
-                actArray.forEach(a => { if(a.username) userCounts[a.username] = (userCounts[a.username] || 0) + 1; });
-
-                let topUser = "-";
-                let maxCount = 0;
-                for(let u in userCounts) { if(userCounts[u] > maxCount) { maxCount = userCounts[u]; topUser = u; } }
-                
+                document.getElementById('statTotalTx').innerText = logsArray.length; document.getElementById('statTotalAct').innerText = actArray.length;
+                let userCounts = {}; logsArray.forEach(l => { if(l.username) userCounts[l.username] = (userCounts[l.username] || 0) + 1; }); actArray.forEach(a => { if(a.username) userCounts[a.username] = (userCounts[a.username] || 0) + 1; });
+                let topUser = "-"; let maxCount = 0; for(let u in userCounts) { if(userCounts[u] > maxCount) { maxCount = userCounts[u]; topUser = u; } }
                 document.getElementById('statTopUser').innerText = maxCount > 0 ? `${topUser.toUpperCase()} (${maxCount} Act)` : "-";
-
             } catch (e) { console.error("Admin Load Error:", e); } 
         }
         
-        async function adminAddUser() { const u = document.getElementById('newUsername').value; const p = document.getElementById('newPassword').value; if(!u || !p) return; await fetch('/api/admin/users', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u.toLowerCase(), password:p}) }); document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadAdminData(); }
-        async function adminDelUser(u) { if(confirm(`Hapus user ${u}?`)) { await fetch('/api/admin/users/'+u, { method: 'DELETE' }); loadAdminData(); } }
+        async function adminAddUser() { const u = document.getElementById('newUsername').value; const p = document.getElementById('newPassword').value; if(!u || !p) return showToast('Username dan Password wajib diisi!', 'warning'); await fetch('/api/admin/users', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username:u.toLowerCase(), password:p}) }); document.getElementById('newUsername').value = ''; document.getElementById('newPassword').value = ''; loadAdminData(); showToast(`User ${u.toUpperCase()} berhasil ditambahkan!`, 'success'); }
+        async function adminDelUser(u) { if(confirm(`Hapus user ${u}?`)) { await fetch('/api/admin/users/'+u, { method: 'DELETE' }); loadAdminData(); showToast(`User ${u.toUpperCase()} dihapus.`, 'success'); } }
+
+        let currentGenMode = 'qr'; let currentGenQrType = 'url'; let customQrInstance = null; let lastEanCode = '';
+        function setGenMode(mode) {
+            currentGenMode = mode;
+            document.getElementById('panelGenQr').classList.toggle('hidden', mode !== 'qr');
+            document.getElementById('panelGenBar').classList.toggle('hidden', mode !== 'barcode');
+            document.getElementById('btnGenQr').classList.replace(mode === 'qr' ? 'tab-inactive' : 'tab-active', mode === 'qr' ? 'tab-active' : 'tab-inactive');
+            document.getElementById('btnGenBar').classList.replace(mode === 'barcode' ? 'tab-inactive' : 'tab-active', mode === 'barcode' ? 'tab-active' : 'tab-inactive');
+            document.getElementById('panelGenResult').classList.add('hidden'); 
+        }
+        function setGenQrType(type) {
+            currentGenQrType = type;
+            const btnUrl = document.getElementById('btnGenQrUrl'); const btnText = document.getElementById('btnGenQrText');
+            if(type === 'url') {
+                btnUrl.className = "px-4 py-2 text-xs font-bold rounded-lg bg-pink-100 text-pink-600 border border-pink-200 transition";
+                btnText.className = "px-4 py-2 text-xs font-bold rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 transition";
+                document.getElementById('lblGenQr').innerText = "Masukkan URL"; document.getElementById('inputGenQr').placeholder = "https://example.com";
+            } else {
+                btnText.className = "px-4 py-2 text-xs font-bold rounded-lg bg-pink-100 text-pink-600 border border-pink-200 transition";
+                btnUrl.className = "px-4 py-2 text-xs font-bold rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 transition";
+                document.getElementById('lblGenQr').innerText = "Masukkan Teks"; document.getElementById('inputGenQr').placeholder = "Ketik teks di sini...";
+            }
+            document.getElementById('inputGenQr').value = ''; document.getElementById('panelGenResult').classList.add('hidden');
+        }
+        function actionGenerateQR() {
+            let content = document.getElementById('inputGenQr').value.trim();
+            if (!content) return showToast("Teks / URL tidak boleh kosong!", "warning");
+            if (currentGenQrType === 'url' && !/^https?:\/\//i.test(content)) content = 'https://' + content;
+            document.getElementById('panelGenResult').classList.remove('hidden');
+            document.getElementById('outGenQrWrapper').classList.remove('hidden');
+            document.getElementById('outGenBarWrapper').classList.add('hidden');
+            document.getElementById('panelGenResult').classList.add('fade-in-up');
+            const box = document.getElementById('outGenQrBox'); box.innerHTML = '';
+            if (customQrInstance) { try { customQrInstance.clear(); } catch(e){} }
+            customQrInstance = new QRCode(box, { text: content, width: 220, height: 220, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+            document.getElementById('outGenQrText').innerText = currentGenQrType === 'url' ? `🔗 ${content}` : `📝 "${content}"`;
+            const btnUrl = document.getElementById('btnGenQrUrl'); const btnCopy = document.getElementById('btnGenQrCopy');
+            if (currentGenQrType === 'url') { btnCopy.classList.add('hidden'); btnUrl.classList.remove('hidden'); btnUrl.href = content; } 
+            else { btnUrl.classList.add('hidden'); btnCopy.classList.remove('hidden'); }
+            catatAktivitas('Membuat QR Code', currentGenQrType);
+        }
+        function downloadQR() {
+            const box = document.getElementById('outGenQrBox');
+            const img = box.querySelector('img'); const canvas = box.querySelector('canvas'); const a = document.createElement('a');
+            if (canvas) { a.href = canvas.toDataURL('image/png'); } else if (img) { a.href = img.src; } else return;
+            a.download = 'klikauto-qr.png'; a.click(); showToast("QR Code berhasil diunduh!", "success");
+        }
+        function copyQrContent() { navigator.clipboard.writeText(document.getElementById('inputGenQr').value.trim()).then(() => showToast("Teks QR berhasil disalin!", "success")); }
+        const EAN13_L = ['0001101','0011001','0010011','0111101','0100011','0110001','0101111','0111011','0110111','0001011'];
+        const EAN13_G = ['0100111','0110011','0011011','0100001','0011101','0111001','0000101','0010001','0001001','0010111'];
+        const EAN13_R = ['1110010','1100110','1101100','1000010','1011100','1001110','1010000','1000100','1001000','1110100'];
+        const PARITY  = ['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+        function calcEAN13(raw) {
+            const digits = raw.replace(/\D/g,'').slice(0,12).padStart(12,'0'); const arr = digits.split('').map(Number);
+            const sum = arr.reduce((acc,d,i) => acc + d * (i%2===0?1:3), 0); return digits + ((10 - (sum%10))%10);
+        }
+        function encodeEAN13(code) {
+            const d = code.split('').map(Number); const parity = PARITY[d[0]]; let bars = '101';
+            for (let i=0;i<6;i++) bars += parity[i]==='L' ? EAN13_L[d[i+1]] : EAN13_G[d[i+1]];
+            bars += '01010'; for (let i=7;i<13;i++) bars += EAN13_R[d[i]]; bars += '101'; return bars;
+        }
+        function actionGenerateBarcode() {
+            const raw = document.getElementById('inputGenBar').value.replace(/\D/g,'');
+            if (!raw) return showToast("Masukkan angka untuk membuat barcode!", "warning");
+            const code = calcEAN13(raw); lastEanCode = code; const bars = encodeEAN13(code);
+            document.getElementById('panelGenResult').classList.remove('hidden');
+            document.getElementById('outGenQrWrapper').classList.add('hidden');
+            document.getElementById('outGenBarWrapper').classList.remove('hidden');
+            document.getElementById('panelGenResult').classList.add('fade-in-up');
+            const canvas = document.getElementById('outGenBarCanvas');
+            const bw = 3, bh = 100, fs = 14; const totalW = bars.length * bw + 20;
+            canvas.width = totalW; canvas.height = bh + fs + 12;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#0f172a'; const sx = 10;
+            for (let i=0;i<bars.length;i++) { if (bars[i]==='1') ctx.fillRect(sx + i*bw, 0, bw, bh); }
+            ctx.font = `bold ${fs}px monospace`; ctx.textAlign = 'center';
+            ctx.fillText(code[0], sx-6, bh+fs); ctx.fillText(code.slice(1,7), sx + 21*bw + 14, bh+fs); ctx.fillText(code.slice(7), sx + (21+5+42)*bw + 20, bh+fs);
+            document.getElementById('outGenBarText').innerText = code;
+            catatAktivitas('Membuat Barcode EAN-13', code);
+        }
+        function downloadBarcode() {
+            const canvas = document.getElementById('outGenBarCanvas'); const a = document.createElement('a');
+            a.href = canvas.toDataURL('image/png'); a.download = 'barcode-ean13-' + lastEanCode + '.png';
+            a.click(); showToast("Barcode EAN-13 diunduh!", "success");
+        }
+        function copyBarcode() { navigator.clipboard.writeText(lastEanCode).then(() => showToast(`Kode EAN disalin: ${lastEanCode}`, "success")); }
     </script>
 </body>
 </html>
